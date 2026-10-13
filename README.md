@@ -96,3 +96,4 @@ Independent RTL implementation with verification and tooling informed by these p
 - [Zaozi](https://github.com/xinpian-tech/zaozi): hardware description framework and pinned development tools.
 - [UART_Zaozi](https://github.com/vowstar/uart_zaozi): Chisel and Nix project layout reference.
 - [mvn-trace-forge](https://github.com/Avimitin/mvn-trace-forge): dependency tracing and locked Maven repository construction.
+- [LLVM](https://github.com/llvm/llvm-project) and [CIRCT](https://github.com/llvm/circt): compiler toolchain.

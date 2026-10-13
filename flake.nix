@@ -20,7 +20,10 @@
   outputs = { self, nixpkgs, flake-utils, zaozi, riscv-dv, riscv-formal }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = zaozi.legacyPackages.${system}.extend (final: prev: {
+        pkgs = (import ./nix/stable-toolchain.nix {
+          inherit zaozi system;
+          lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+        }).extend (final: prev: {
           mkMavenRepository = args:
             let
               lock = builtins.fromJSON (builtins.readFile args.lockFile);
