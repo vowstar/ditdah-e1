@@ -79,6 +79,7 @@ Reports land under `result/`; [verification.md](doc/verification.md) records pas
 
 `make package-release RELEASE_TAG=vX.Y.Z` creates trace-free RTL archives with a manifest, filelist, and license.
 Variants cover the default core, optional JTAG, and an Anlogic EG4 FPGA register file with an SDC template.
+For FPGA integration, replace `DitDahE1Gpr.sv` in `filelist.f` with `fpga/DitDahE1Gpr.v` and supply the device primitive library.
 
 ## Credits
 
@@ -92,4 +93,6 @@ Independent RTL implementation with verification and tooling informed by these p
 - [T1](https://github.com/chipsalliance/t1): Nix-driven artifact, build, run, and check separation.
 - [riscv-arch-test](https://github.com/riscv-non-isa/riscv-arch-test): compile, run, dump, compare signature convention.
 - [Spike](https://github.com/riscv-software-src/riscv-isa-sim) and [Sail-RISCV](https://github.com/riscv/sail-riscv): reference ISS models for differential testing and compliance signatures.
-- [Zaozi](https://github.com/vowstar/uart_zaozi): Chisel and Nix project layout reference.
+- [Zaozi](https://github.com/xinpian-tech/zaozi): hardware description framework and pinned development tools.
+- [UART_Zaozi](https://github.com/vowstar/uart_zaozi): Chisel and Nix project layout reference.
+- [mvn-trace-forge](https://github.com/Avimitin/mvn-trace-forge): dependency tracing and locked Maven repository construction.

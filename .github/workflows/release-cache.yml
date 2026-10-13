@@ -10,10 +10,16 @@ on:
       - flake.nix
       - flake.lock
       - "nix/**"
+      - "ditdah_e1/**"
+      - "fpga/**"
+      - scripts/package_release.py
+      - .github/workflows/release-cache.yml
+      - .github/workflows/release.yml
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: release-cache
@@ -24,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -36,7 +42,7 @@ jobs:
       - name: Restore And Save Nix Store
         uses: nix-community/cache-nix-action@v7
         with:
-          primary-key: nix-release-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix', 'nix/**') }}
+          primary-key: nix-release-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix', 'nix/**', 'ditdah_e1/**', 'fpga/**', 'scripts/package_release.py') }}
           restore-prefixes-first-match: nix-release-${{ runner.os }}-
           gc-max-store-size-linux: 14G
           purge: true
@@ -46,3 +52,14 @@ jobs:
 
       - name: Build Release Inputs
         run: nix build .#release-inputs --out-link result/release-inputs
+
+      - name: Verify Release Packages
+        env:
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          nix develop .#release --command python3 scripts/package_release.py \
+            --tag "ci-${RELEASE_COMMIT}" \
+            --commit "$RELEASE_COMMIT" \
+            --input-dir result/release-inputs \
+            --out-dir result/release \
+            --verify

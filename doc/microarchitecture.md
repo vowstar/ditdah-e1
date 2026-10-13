@@ -1,6 +1,6 @@
 # DitDahE1 Microarchitecture
 
-![DitDahE1 microarchitecture](ditdah_e1_microarchitecture.drawio.svg)
+![DitDah-E1 microarchitecture](ditdah_e1_microarchitecture.drawio.svg)
 
 ## Overview
 

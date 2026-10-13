@@ -102,8 +102,9 @@ def test_release_cache_is_scoped_to_trusted_default_branch_updates():
 
     trigger = workflow[True]
     assert trigger["push"]["branches"] == ["main"]
-    assert {"flake.nix", "flake.lock", "nix/**"}.issubset(trigger["push"]["paths"])
+    assert {"flake.nix", "flake.lock", "nix/**", "ditdah_e1/**", "fpga/**", "scripts/package_release.py"}.issubset(trigger["push"]["paths"])
     assert workflow["permissions"]["contents"] == "read"
+    assert workflow["permissions"]["actions"] == "write"
 
     warm = workflow["jobs"]["warm"]
     cache_step = next(
@@ -114,3 +115,22 @@ def test_release_cache_is_scoped_to_trusted_default_branch_updates():
     assert cache_step["with"]["purge"] is True
     warm_run = "\n".join(str(step.get("run", "")) for step in warm["steps"])
     assert "nix build .#release-inputs" in warm_run
+    assert "scripts/package_release.py" in warm_run
+    assert "--verify" in warm_run
+
+
+def test_release_cache_writer_and_reader_share_source_sensitive_keys():
+    workflows = {
+        name: yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+        for name in ("release.yml", "release-cache.yml")
+    }
+    keys = []
+    for workflow in workflows.values():
+        for job in workflow["jobs"].values():
+            for step in job["steps"]:
+                if "cache-nix-action" in step.get("uses", ""):
+                    keys.append(step["with"]["primary-key"])
+    assert len(keys) == 2
+    assert keys[0] == keys[1]
+    for pattern in ("ditdah_e1/**", "fpga/**", "scripts/package_release.py"):
+        assert pattern in keys[0]
