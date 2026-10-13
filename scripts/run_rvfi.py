@@ -131,7 +131,7 @@ smtbmc z3
 
 [script]
 plugin -i {slang_so}
-read_slang -I{core_dir} {trace_top_sv} {dut_sv} {core_dir}/DitDah32Gpr.sv {dv_sv} {layers_sv} --top ditdah32_trace_top
+read_slang -I{core_dir} {trace_top_sv} {dut_sv} {core_dir}/DitDahE1Gpr.sv {dv_sv} {layers_sv} --top ditdah_e1_trace_top
 read -sv {check_basename}.sv {wrapper_sv}
 prep -flatten -nordff -top rvfi_testbench
 chformal -early
@@ -171,7 +171,7 @@ def run_wfi_wake_suite(core_dir, source, logs_dir):
     """Run the WFI bounded-wake proof outside the genchecks pipeline.
 
     The proof relies on a counter and assertion inside formal/riscv_formal/
-    ditdah32/wrapper.sv guarded by DITDAH32_RVFI_WFI_WAKE_CHECK. genchecks has
+    ditdah_e1/wrapper.sv guarded by DITDAH_E1_RVFI_WFI_WAKE_CHECK. genchecks has
     no built-in template for this property, so we emit a hand-rolled SBY file
     that elaborates the wrapper under symbolic IRQ inputs and runs BMC to
     sufficient depth for the in-wrapper invariant to be checked.
@@ -195,14 +195,14 @@ def run_wfi_wake_suite(core_dir, source, logs_dir):
         depth=depth,
         depth_plus=depth + 1,
         check_basename="wfi_wake_ch0",
-        extra_defines="`define DITDAH32_RVFI_ENABLE_IRQ\n`define DITDAH32_RVFI_WFI_WAKE_CHECK",
+        extra_defines="`define DITDAH_E1_RVFI_ENABLE_IRQ\n`define DITDAH_E1_RVFI_WFI_WAKE_CHECK",
         slang_so=resolve_slang_so(),
         core_dir=str(core_dir.resolve()),
         wrapper_sv=str((core_dir / "wrapper.sv").resolve()),
-        trace_top_sv=str((core_dir / "ditdah32_trace_top.sv").resolve()),
-        dut_sv=str((core_dir / "DitDah32.sv").resolve()),
-        dv_sv=str((core_dir / "DitDah32_DV.sv").resolve()),
-        layers_sv=str((core_dir / "layers-DitDah32-DV.sv").resolve()),
+        trace_top_sv=str((core_dir / "ditdah_e1_trace_top.sv").resolve()),
+        dut_sv=str((core_dir / "DitDahE1.sv").resolve()),
+        dv_sv=str((core_dir / "DitDahE1_DV.sv").resolve()),
+        layers_sv=str((core_dir / "layers-DitDahE1-DV.sv").resolve()),
         macros_vh=str((checks_root / "rvfi_macros.vh").resolve()),
         channel_sv=str((checks_root / "rvfi_channel.sv").resolve()),
         testbench_sv=str((checks_root / "rvfi_testbench.sv").resolve()),
@@ -265,14 +265,14 @@ def run_trap_csr_suite(core_dir, source, logs_dir):
         depth=depth,
         depth_plus=depth + 1,
         check_basename="trap_csr_ch0",
-        extra_defines="`define DITDAH32_RVFI_ENABLE_IRQ\n`define DITDAH32_RVFI_TRAP_CSR_CHECK",
+        extra_defines="`define DITDAH_E1_RVFI_ENABLE_IRQ\n`define DITDAH_E1_RVFI_TRAP_CSR_CHECK",
         slang_so=resolve_slang_so(),
         core_dir=str(core_dir.resolve()),
         wrapper_sv=str((core_dir / "wrapper.sv").resolve()),
-        trace_top_sv=str((core_dir / "ditdah32_trace_top.sv").resolve()),
-        dut_sv=str((core_dir / "DitDah32.sv").resolve()),
-        dv_sv=str((core_dir / "DitDah32_DV.sv").resolve()),
-        layers_sv=str((core_dir / "layers-DitDah32-DV.sv").resolve()),
+        trace_top_sv=str((core_dir / "ditdah_e1_trace_top.sv").resolve()),
+        dut_sv=str((core_dir / "DitDahE1.sv").resolve()),
+        dv_sv=str((core_dir / "DitDahE1_DV.sv").resolve()),
+        layers_sv=str((core_dir / "layers-DitDahE1-DV.sv").resolve()),
         macros_vh=str((checks_root / "rvfi_macros.vh").resolve()),
         channel_sv=str((checks_root / "rvfi_channel.sv").resolve()),
         testbench_sv=str((checks_root / "rvfi_testbench.sv").resolve()),
@@ -310,8 +310,8 @@ def run_trap_csr_suite(core_dir, source, logs_dir):
 def run_csr_warl_suite(core_dir, source, logs_dir):
     """Run the WARL per-field CSR legalization proof.
 
-    Drives the inline SVA in formal/riscv_formal/ditdah32/wrapper.sv guarded
-    by DITDAH32_RVFI_CSR_WARL_CHECK. Proves that the writable M-mode CSRs
+    Drives the inline SVA in formal/riscv_formal/ditdah_e1/wrapper.sv guarded
+    by DITDAH_E1_RVFI_CSR_WARL_CHECK. Proves that the writable M-mode CSRs
     only ever expose legal field values to software (reserved-zero bits stay
     zero, mstatus.MPP is forced 11, mtvec.MODE=00, mepc[0]=0, mie writes
     outside MSI/MTI/MEI do not stick).
@@ -334,14 +334,14 @@ def run_csr_warl_suite(core_dir, source, logs_dir):
         depth=depth,
         depth_plus=depth + 1,
         check_basename="csr_warl_ch0",
-        extra_defines="`define DITDAH32_RVFI_ENABLE_IRQ\n`define DITDAH32_RVFI_CSR_WARL_CHECK",
+        extra_defines="`define DITDAH_E1_RVFI_ENABLE_IRQ\n`define DITDAH_E1_RVFI_CSR_WARL_CHECK",
         slang_so=resolve_slang_so(),
         core_dir=str(core_dir.resolve()),
         wrapper_sv=str((core_dir / "wrapper.sv").resolve()),
-        trace_top_sv=str((core_dir / "ditdah32_trace_top.sv").resolve()),
-        dut_sv=str((core_dir / "DitDah32.sv").resolve()),
-        dv_sv=str((core_dir / "DitDah32_DV.sv").resolve()),
-        layers_sv=str((core_dir / "layers-DitDah32-DV.sv").resolve()),
+        trace_top_sv=str((core_dir / "ditdah_e1_trace_top.sv").resolve()),
+        dut_sv=str((core_dir / "DitDahE1.sv").resolve()),
+        dv_sv=str((core_dir / "DitDahE1_DV.sv").resolve()),
+        layers_sv=str((core_dir / "layers-DitDahE1-DV.sv").resolve()),
         macros_vh=str((checks_root / "rvfi_macros.vh").resolve()),
         channel_sv=str((checks_root / "rvfi_channel.sv").resolve()),
         testbench_sv=str((checks_root / "rvfi_testbench.sv").resolve()),
@@ -397,17 +397,17 @@ def run_csr_access_suite(core_dir, source, logs_dir):
         depth_plus=depth + 1,
         check_basename="csr_access_ch0",
         extra_defines=(
-            "`define DITDAH32_RVFI_ENABLE_IRQ\n"
-            "`define DITDAH32_RVFI_CSR_TRACE\n"
-            "`define DITDAH32_RVFI_CSR_READONLY_CHECK"
+            "`define DITDAH_E1_RVFI_ENABLE_IRQ\n"
+            "`define DITDAH_E1_RVFI_CSR_TRACE\n"
+            "`define DITDAH_E1_RVFI_CSR_READONLY_CHECK"
         ),
         slang_so=resolve_slang_so(),
         core_dir=str(core_dir.resolve()),
         wrapper_sv=str((core_dir / "wrapper.sv").resolve()),
-        trace_top_sv=str((core_dir / "ditdah32_trace_top.sv").resolve()),
-        dut_sv=str((core_dir / "DitDah32.sv").resolve()),
-        dv_sv=str((core_dir / "DitDah32_DV.sv").resolve()),
-        layers_sv=str((core_dir / "layers-DitDah32-DV.sv").resolve()),
+        trace_top_sv=str((core_dir / "ditdah_e1_trace_top.sv").resolve()),
+        dut_sv=str((core_dir / "DitDahE1.sv").resolve()),
+        dv_sv=str((core_dir / "DitDahE1_DV.sv").resolve()),
+        layers_sv=str((core_dir / "layers-DitDahE1-DV.sv").resolve()),
         macros_vh=str((checks_root / "rvfi_macros.vh").resolve()),
         channel_sv=str((checks_root / "rvfi_channel.sv").resolve()),
         testbench_sv=str((checks_root / "rvfi_testbench.sv").resolve()),
@@ -508,11 +508,11 @@ def run_external_riscv_formal(out_dir, logs_dir):
         return step
 
     work_root = out_dir / "riscv-formal"
-    core_dir = work_root / "cores" / "ditdah32"
+    core_dir = work_root / "cores" / "ditdah_e1"
     copy_riscv_formal_suite(source, work_root)
     core_dir.mkdir(parents=True, exist_ok=True)
 
-    config_dir = REPO_ROOT / "formal" / "riscv_formal" / "ditdah32"
+    config_dir = REPO_ROOT / "formal" / "riscv_formal" / "ditdah_e1"
     slang_so = resolve_slang_so()
     for cfg_name in (
         "checks.cfg", "checks_bus.cfg", "checks_csr.cfg", "checks_csr_state.cfg",
@@ -523,10 +523,10 @@ def run_external_riscv_formal(out_dir, logs_dir):
         cfg_text = cfg_text.replace("@SLANG_SO@", slang_so)
         (core_dir / cfg_name).write_text(cfg_text, encoding="utf-8")
     shutil.copy2(config_dir / "wrapper.sv", core_dir / "wrapper.sv")
-    shutil.copy2(config_dir / "ditdah32_trace_top.sv", core_dir / "ditdah32_trace_top.sv")
+    shutil.copy2(config_dir / "ditdah_e1_trace_top.sv", core_dir / "ditdah_e1_trace_top.sv")
     # The DV layer collateral is read alongside the core so read_slang can
     # resolve the trace probe XMRs.
-    for collateral in ("DitDah32.sv", "DitDah32Gpr.sv", "DitDah32_DV.sv", "layers-DitDah32-DV.sv", "layers-DitDah32Gpr-DV.sv", "ref_DitDah32.sv"):
+    for collateral in ("DitDahE1.sv", "DitDahE1Gpr.sv", "DitDahE1_DV.sv", "layers-DitDahE1-DV.sv", "layers-DitDahE1Gpr-DV.sv", "ref_DitDahE1.sv"):
         shutil.copy2(REPO_ROOT / "result" / collateral, core_dir / collateral)
 
     step["source_path"] = str(source)
@@ -660,7 +660,7 @@ def run_external_riscv_formal(out_dir, logs_dir):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run DitDah32 standard RVFI verification gate")
+    parser = argparse.ArgumentParser(description="Run DitDahE1 standard RVFI verification gate")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "formal" / "rvfi")
     parser.add_argument("--depth", type=int, default=24)
     parser.add_argument(

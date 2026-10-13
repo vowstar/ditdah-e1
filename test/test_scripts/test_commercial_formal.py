@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import run_commercial_formal as fpv  # noqa: E402
 
 
-HIER = f"{fpv.TOP}.dut.sva_DitDah32"
+HIER = f"{fpv.TOP}.dut.sva_DitDahE1"
 
 
 def vcf_row(name, status, kind=None, seconds="00:00:01"):

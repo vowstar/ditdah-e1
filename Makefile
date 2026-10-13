@@ -57,13 +57,13 @@ audit-completion:
 	python3 scripts/completion_audit.py --out-dir result/verification
 
 build:
-	build-ditdah32 --no-trace
+	build-ditdah-e1 --no-trace
 
 build-trace:
-	build-ditdah32 --trace
+	build-ditdah-e1 --trace
 
 build-jtag:
-	OUTPUT_DIR=result/jtag build-ditdah32 --no-trace --jtag
+	OUTPUT_DIR=result/jtag build-ditdah-e1 --no-trace --jtag
 
 package-release:
 	@test -n "$(RELEASE_TAG)" || (echo "RELEASE_TAG is required" >&2; exit 2)
@@ -95,7 +95,7 @@ formal-jtag: build-jtag
 # Its own output tree: the SVA firtool emits is not parseable by read_slang,
 # so it must never land in result/ where the SymbiYosys flows look.
 build-sva:
-	OUTPUT_DIR=$(CURDIR)/result/sva build-ditdah32 --trace --sva
+	OUTPUT_DIR=$(CURDIR)/result/sva build-ditdah-e1 --trace --sva
 
 # Unbounded proof on a licensed engine. Kept out of verify-signoff because CI
 # has no license. Skips clean when no engine is reachable.
@@ -109,7 +109,7 @@ verify-rvfi: build-trace
 	python3 scripts/run_rvfi.py --depth 24
 
 verify-riscv-dv: build-trace
-	python3 scripts/run_riscv_dv.py --config test/riscv_dv/ditdah32_rv32ec.yaml
+	python3 scripts/run_riscv_dv.py --config test/riscv_dv/ditdah_e1_rv32ec.yaml
 
 verify-compliance: build-trace
 	python3 scripts/run_compliance.py
@@ -134,7 +134,7 @@ test-isa-rtl: test-isa build-trace
 	python3 scripts/run_rtl_isa_matrix.py --isa-dir result/isa --out-dir result/rtl_trace/isa_artifacts
 
 test: test-model test-isa test-scripts bench build-trace
-	$(MAKE) -C test/test_ditdah32
+	$(MAKE) -C test/test_ditdah_e1
 
 verify:
 	python3 scripts/run_verification_campaign.py --profile full
@@ -191,5 +191,5 @@ verify-rtl:
 
 clean:
 	rm -rf result
-	$(MAKE) -C test/test_ditdah32 clean || true
+	$(MAKE) -C test/test_ditdah_e1 clean || true
 	$(MAKE) -C test/test_jtag clean || true

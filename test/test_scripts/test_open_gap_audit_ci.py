@@ -13,7 +13,7 @@ import open_gap_audit  # noqa: E402
 
 
 WORKFLOW = """
-name: DitDah32 Verification
+name: DitDahE1 Verification
 permissions:
   contents: read
   actions: read

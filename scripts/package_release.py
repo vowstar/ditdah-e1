@@ -43,21 +43,21 @@ class Variant:
 
 
 VARIANTS = (
-    Variant("standard", "standard", "", False, ("DitDah32.sv",)),
+    Variant("standard", "standard", "", False, ("DitDahE1.sv",)),
     Variant(
         "jtag",
         "jtag",
         "-jtag",
         True,
-        ("DitDah32.sv", "DitDah32DebugModule.sv", "DitDah32JtagDtm.sv"),
+        ("DitDahE1.sv", "DitDahE1DebugModule.sv", "DitDahE1JtagDtm.sv"),
     ),
     Variant(
         "fpga",
         "standard",
         "-fpga",
         False,
-        ("DitDah32.sv",),
-        ("fpga/DitDah32Gpr.v", "fpga/ditdah32.sdc"),
+        ("DitDahE1.sv",),
+        ("fpga/DitDahE1Gpr.v", "fpga/ditdah_e1.sdc"),
     ),
 )
 
@@ -129,7 +129,7 @@ def audit_variant(input_dir, variant):
     if not variant_dir.is_dir():
         raise ReleaseError(f"missing release variant: {variant.directory}")
 
-    config_path = variant_dir / "ditdah32_config.json"
+    config_path = variant_dir / "ditdah_e1_config.json"
     config = read_json(config_path)
     required_config = {"enableTrace": False, "enableJtag": variant.enable_jtag}
     for key, expected in required_config.items():
@@ -152,7 +152,7 @@ def audit_variant(input_dir, variant):
             f"{variant.directory} filelist is missing: {', '.join(missing_rtl)}"
         )
     unexpected_debug = sorted(
-        {"DitDah32DebugModule.sv", "DitDah32JtagDtm.sv"} & rtl_names
+        {"DitDahE1DebugModule.sv", "DitDahE1JtagDtm.sv"} & rtl_names
     )
     if not variant.enable_jtag and unexpected_debug:
         raise ReleaseError(
@@ -221,10 +221,10 @@ def write_archive(root, archive_path, epoch):
 
 def stage_variant(input_dir, output_dir, license_path, tag, commit, epoch, variant):
     variant_dir, config, rtl_entries = audit_variant(input_dir, variant)
-    asset_stem = f"ditdah32-{tag}{variant.suffix}"
+    asset_stem = f"ditdah-e1-{tag}{variant.suffix}"
     archive_path = output_dir / f"{asset_stem}.tar.gz"
 
-    with tempfile.TemporaryDirectory(prefix="ditdah32-release-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="ditdah-e1-release-") as temporary:
         root = Path(temporary) / asset_stem
         root.mkdir()
         copied = []
@@ -241,7 +241,7 @@ def stage_variant(input_dir, output_dir, license_path, tag, commit, epoch, varia
         )
         copied.append(filelist_path)
 
-        config_path = root / "ditdah32_config.json"
+        config_path = root / "ditdah_e1_config.json"
         config_path.write_text(
             json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
@@ -281,7 +281,7 @@ def stage_variant(input_dir, output_dir, license_path, tag, commit, epoch, varia
 
 
 def verify_archive(archive_path):
-    with tempfile.TemporaryDirectory(prefix="ditdah32-release-check-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="ditdah-e1-release-check-") as temporary:
         temporary_path = Path(temporary)
         with tarfile.open(archive_path, mode="r:gz") as archive:
             archive.extractall(temporary_path, filter="data")
@@ -291,7 +291,7 @@ def verify_archive(archive_path):
                 "iverilog",
                 "-g2012",
                 "-s",
-                "DitDah32",
+                "DitDahE1",
                 "-o",
                 str(temporary_path / "rtl.vvp"),
                 "-f",
@@ -303,7 +303,7 @@ def verify_archive(archive_path):
                 "--timing",
                 "-Wno-fatal",
                 "--top-module",
-                "DitDah32",
+                "DitDahE1",
                 "--Mdir",
                 str(temporary_path / "obj_dir"),
                 "-f",
@@ -345,7 +345,7 @@ def package_release(
 
     output_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(
-        prefix="ditdah32-release-output-", dir=output_dir.parent
+        prefix="ditdah-e1-release-output-", dir=output_dir.parent
     ) as temporary:
         temporary_output = Path(temporary)
         temporary_archives = [

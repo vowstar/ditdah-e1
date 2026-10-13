@@ -1,7 +1,7 @@
-# DitDah32 Memory Fault RVFI Contract
+# DitDahE1 Memory Fault RVFI Contract
 
 This document defines the architectural behavior and RVFI reporting contract
-for DitDah32 memory faults caused by AXI-Lite non-`OKAY` responses. The
+for DitDahE1 memory faults caused by AXI-Lite non-`OKAY` responses. The
 contract matches what the YosysHQ riscv-formal `fault` and `bus_dmem_fault`
 property groups require, exposing the
 `riscv-formal/cores/nerv/nerv.sv`.

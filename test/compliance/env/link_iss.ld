@@ -1,7 +1,7 @@
 /* SPDX-FileCopyrightText: 2026 Huang Rui <vowstar@gmail.com> */
 /* SPDX-License-Identifier: MIT
  *
- * Linker script for the reference ISS (Sail / Spike) view of the DitDah32
+ * Linker script for the reference ISS (Sail / Spike) view of the DitDahE1
  * compliance tests. Mirrors env/link.ld but places everything at the
  * standard 0x80000000 DRAM base so Sail's default RV32 config can load the
  * ELF without altering ROM/RAM placement. The test logic is identical to

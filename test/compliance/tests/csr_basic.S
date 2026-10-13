@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // Zicsr basic CSR access compliance: csrrw, csrrs, csrrc plus their
 // immediate variants. Uses mscratch only so the signature is independent
-// of the simulator's mstatus/mie/mtvec WARL layout (DitDah32 forces a
+// of the simulator's mstatus/mie/mtvec WARL layout (DitDahE1 forces a
 // tighter field set than Sail's default rv32d config).
 
 #include "compliance.h"

@@ -20,7 +20,7 @@ def write_markdown(path, report):
     coremark = report["benchmarks"]["coremark"]
     dhrystone = report["benchmarks"]["dhrystone"]
     lines = [
-        "# DitDah32 Benchmark Score Report",
+        "# DitDahE1 Benchmark Score Report",
         "",
         f"Status: `{report['status']}`",
         "",
@@ -50,7 +50,7 @@ def write_markdown(path, report):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Summarize DitDah32 local RTL benchmark score estimates")
+    parser = argparse.ArgumentParser(description="Summarize DitDahE1 local RTL benchmark score estimates")
     parser.add_argument("--in-dir", type=Path, default=REPO_ROOT / "result" / "bench" / "scores")
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "result" / "bench" / "benchmark_scores.json")
     parser.add_argument("--markdown", type=Path, default=REPO_ROOT / "result" / "bench" / "benchmark_scores.md")

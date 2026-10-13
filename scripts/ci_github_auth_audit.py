@@ -114,7 +114,7 @@ def build_report(required_scopes):
 
 def write_markdown(path, report):
     lines = [
-        "# DitDah32 GitHub Auth Audit",
+        "# DitDahE1 GitHub Auth Audit",
         "",
         f"Status: `{report['status']}`",
         "",
@@ -135,7 +135,7 @@ def write_markdown(path, report):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Audit GitHub CLI authentication for DitDah32 remote CI work")
+    parser = argparse.ArgumentParser(description="Audit GitHub CLI authentication for DitDahE1 remote CI work")
     parser.add_argument("--required-scope", action="append", default=["repo"], help="Required GitHub token scope. Can be repeated.")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "verification")
     args = parser.parse_args()

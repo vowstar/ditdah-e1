@@ -13,7 +13,7 @@ import jtag_ppa_audit  # noqa: E402
 
 def test_parse_logic_depth():
     assert jtag_ppa_audit.parse_logic_depth(
-        "Longest topological path in DitDah32 (length=92):"
+        "Longest topological path in DitDahE1 (length=92):"
     ) == 92
 
 

@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: 2026 Huang Rui <vowstar@gmail.com>
 // SPDX-License-Identifier: MIT
-#ifndef DITDAH32_BENCH_RESULT_H
-#define DITDAH32_BENCH_RESULT_H
+#ifndef DITDAH_E1_BENCH_RESULT_H
+#define DITDAH_E1_BENCH_RESULT_H
 
 enum {
-    DITDAH32_BENCH_MAGIC = 0xdd32beefu,
-    DITDAH32_BENCH_COREMARK = 1u,
-    DITDAH32_BENCH_DHRYSTONE = 2u,
-    DITDAH32_BENCH_TIMING_START = 0x53544152u,
-    DITDAH32_BENCH_TIMING_STOP = 0x53544f50u,
+    DITDAH_E1_BENCH_MAGIC = 0xdd32beefu,
+    DITDAH_E1_BENCH_COREMARK = 1u,
+    DITDAH_E1_BENCH_DHRYSTONE = 2u,
+    DITDAH_E1_BENCH_TIMING_START = 0x53544152u,
+    DITDAH_E1_BENCH_TIMING_STOP = 0x53544f50u,
 };
 
-struct ditdah32_bench_result {
+struct ditdah_e1_bench_result {
     volatile unsigned int magic;
     volatile unsigned int benchmark_id;
     volatile unsigned int status;
@@ -21,8 +21,8 @@ struct ditdah32_bench_result {
     volatile unsigned int value3;
 };
 
-extern volatile struct ditdah32_bench_result ditdah32_bench_result;
-extern volatile unsigned int ditdah32_bench_timing_state;
+extern volatile struct ditdah_e1_bench_result ditdah_e1_bench_result;
+extern volatile unsigned int ditdah_e1_bench_timing_state;
 
 void bench_report(
     unsigned int benchmark_id,

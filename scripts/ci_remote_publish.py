@@ -299,7 +299,7 @@ def build_report(args):
 
 def write_markdown(path, report):
     lines = [
-        "# DitDah32 Remote Publish Audit",
+        "# DitDahE1 Remote Publish Audit",
         "",
         f"Status: `{report['status']}`",
         "",
@@ -325,7 +325,7 @@ def write_markdown(path, report):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Audit and optionally publish DitDah32 to the configured GitHub repository")
+    parser = argparse.ArgumentParser(description="Audit and optionally publish DitDahE1 to the configured GitHub repository")
     parser.add_argument("--repo", help="Target GitHub repository as owner/name. Defaults to git origin.")
     parser.add_argument("--visibility", choices=("private", "public"), default="private")
     parser.add_argument("--confirm-create", action="store_true", help="Actually create the GitHub repository if it is missing.")

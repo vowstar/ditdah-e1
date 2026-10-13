@@ -1,6 +1,6 @@
 # Third-Party Components
 
-DitDah32 project source is licensed under the repository root `LICENSE`.
+DitDahE1 project source is licensed under the repository root `LICENSE`.
 Vendored third-party code remains under the upstream terms listed here.
 
 | Component | Path | Version or Snapshot | Terms Kept In Tree | Use |

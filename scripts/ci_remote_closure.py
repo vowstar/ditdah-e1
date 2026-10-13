@@ -130,7 +130,7 @@ def needs_publish_authorization(missing):
 
 def write_markdown(path, report):
     lines = [
-        "# DitDah32 Remote CI Closure",
+        "# DitDahE1 Remote CI Closure",
         "",
         f"Status: `{report['status']}`",
         f"Expected HEAD: `{report.get('expected_head_sha')}`",
@@ -193,7 +193,7 @@ def write_fail_report(out_dir, started, steps, reason, expected_head_sha=None, e
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run the remote CI closure sequence for DitDah32")
+    parser = argparse.ArgumentParser(description="Run the remote CI closure sequence for DitDahE1")
     parser.add_argument("--repo", help="GitHub repository as owner/name. Defaults to GITHUB_REPOSITORY or git origin in child tools.")
     parser.add_argument("--workflow", default="verification.yml")
     parser.add_argument("--ref", help="Branch or tag containing the workflow file.")

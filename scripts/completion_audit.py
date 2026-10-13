@@ -211,7 +211,7 @@ def build_report():
         ),
         checklist_item(
             "compliance_signature_gate",
-            "Compliance signature gate compiles RV32E-strict tests, runs them on the DitDah32 cocotb harness, and matches every signature word against the pre-computed manifest.",
+            "Compliance signature gate compiles RV32E-strict tests, runs them on the DitDahE1 cocotb harness, and matches every signature word against the pre-computed manifest.",
             [
                 artifact("result/compliance/compliance.json"),
                 artifact("result/compliance/compliance.md"),
@@ -283,7 +283,7 @@ def build_report():
 
 def write_markdown(path, report):
     lines = [
-        "# DitDah32 Completion Audit",
+        "# DitDahE1 Completion Audit",
         "",
         f"Status: `{report['status']}`",
         "",
@@ -306,7 +306,7 @@ def write_markdown(path, report):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Write DitDah32 active-goal completion audit")
+    parser = argparse.ArgumentParser(description="Write DitDahE1 active-goal completion audit")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "verification")
     args = parser.parse_args()
 

@@ -1,4 +1,4 @@
-# DitDah32 Open Verification Gaps
+# DitDahE1 Open Verification Gaps
 
 Gap status is also produced as `result/verification/open_gaps.{json,md}` by
 `make audit-gaps`. A gap is closed only when the requirement, implementation,

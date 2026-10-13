@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 Huang Rui <vowstar@gmail.com>
 # SPDX-License-Identifier: MIT
-"""Orchestrate the DitDah32 compliance signature gate.
+"""Orchestrate the DitDahE1 compliance signature gate.
 
 Build DUT (base 0) and ISS (base 0x80000000) variants, dump per-test
 reference signatures from Sail, cross-check against the hand manifest,
@@ -21,7 +21,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 COMPLIANCE_ROOT = REPO_ROOT / "test" / "compliance"
-COCOTB_TEST_DIR = REPO_ROOT / "test" / "test_ditdah32"
+COCOTB_TEST_DIR = REPO_ROOT / "test" / "test_ditdah_e1"
 MANIFEST = COMPLIANCE_ROOT / "manifest.json"
 
 
@@ -245,7 +245,7 @@ def main() -> int:
     report = {
         "status": "pass" if overall_pass else "fail",
         "scope": (
-            "DitDah32 compliance signature gate: Sail-driven differential "
+            "DitDahE1 compliance signature gate: Sail-driven differential "
             "signature comparison on locally-developed RV32E-strict tests. "
             "The upstream riscv-arch-test act4 framework requires x16-x31 in "
             "setup macros and is not directly consumable, so the corpus is "
@@ -266,7 +266,7 @@ def main() -> int:
     json_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     lines = [
-        "# DitDah32 Compliance Signature Gate",
+        "# DitDahE1 Compliance Signature Gate",
         "",
         f"Status: **{report['status']}**",
         "",

@@ -49,8 +49,8 @@ SMOKE_STEPS = [
     ),
     Step(
         "rtl_build",
-        ["build-ditdah32", "--trace"],
-        "Generate trace-enabled DitDah32 Verilog from Zaozi source for RTL verification.",
+        ["build-ditdah-e1", "--trace"],
+        "Generate trace-enabled DitDahE1 Verilog from Zaozi source for RTL verification.",
     ),
 ]
 
@@ -97,7 +97,7 @@ RTL_MATRIX_STEPS = [
         [
             "make",
             "-C",
-            "test/test_ditdah32",
+            "test/test_ditdah_e1",
             "TESTCASE=axi_lite_backpressure_event_log_stays_protocol_clean",
         ],
         "Run deterministic randomized AXI-Lite backpressure stress with event-log protocol checks.",
@@ -108,7 +108,7 @@ RTL_MATRIX_STEPS = [
 FULL_STEPS = [
     Step(
         "rtl_cocotb_full",
-        ["make", "-C", "test/test_ditdah32"],
+        ["make", "-C", "test/test_ditdah_e1"],
         "Run the full directed cocotb RTL suite, including benchmark completion tests.",
     ),
 ]
@@ -245,7 +245,7 @@ SIGNOFF_STEPS = [
             "python3",
             "scripts/run_riscv_dv.py",
             "--config",
-            "test/riscv_dv/ditdah32_rv32ec.yaml",
+            "test/riscv_dv/ditdah_e1_rv32ec.yaml",
         ],
         "Run the checked-in RISCV-DV RV32EC target/testlist through generation, legality scan, compile, and RTL trace comparison.",
     ),
@@ -383,7 +383,7 @@ def run_step(step, logs_dir):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run DitDah32 verification campaign profiles")
+    parser = argparse.ArgumentParser(description="Run DitDahE1 verification campaign profiles")
     parser.add_argument("--profile", choices=sorted(PROFILES), default="full")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "verification")
     parser.add_argument("--keep-going", action="store_true", help="continue running steps after a failure")

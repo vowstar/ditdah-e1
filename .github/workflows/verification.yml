@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Huang Rui <vowstar@gmail.com>
 # SPDX-License-Identifier: MIT
 
-name: DitDah32 Verification
+name: DitDahE1 Verification
 
 on:
   push:
@@ -52,7 +52,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ditdah32-smoke-${{ github.run_id }}
+          name: ditdah-e1-smoke-${{ github.run_id }}
           if-no-files-found: ignore
           path: |
             result/verification/**
@@ -81,7 +81,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ditdah32-full-${{ github.run_id }}
+          name: ditdah-e1-full-${{ github.run_id }}
           if-no-files-found: ignore
           path: |
             result/verification/**
@@ -92,7 +92,7 @@ jobs:
             result/bench/**
             result/iss/**
             result/isa/**
-            test/test_ditdah32/results.xml
+            test/test_ditdah_e1/results.xml
 
   signoff:
     name: Signoff
@@ -116,7 +116,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ditdah32-signoff-${{ github.run_id }}
+          name: ditdah-e1-signoff-${{ github.run_id }}
           if-no-files-found: ignore
           path: |
             result/verification/**
@@ -127,7 +127,7 @@ jobs:
             result/riscv_dv/**
             result/iss/**
             result/bench/**
-            test/test_ditdah32/results.xml
+            test/test_ditdah_e1/results.xml
 
   spike-matrix:
     name: Spike Matrix
@@ -151,7 +151,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ditdah32-spike-matrix-${{ github.run_id }}
+          name: ditdah-e1-spike-matrix-${{ github.run_id }}
           if-no-files-found: ignore
           path: |
             result/verification/**
@@ -183,7 +183,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ditdah32-ci-evidence-${{ github.run_id }}
+          name: ditdah-e1-ci-evidence-${{ github.run_id }}
           if-no-files-found: ignore
           path: |
             result/verification/**

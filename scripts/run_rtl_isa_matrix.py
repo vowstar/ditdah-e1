@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-TEST_DIR = REPO_ROOT / "test" / "test_ditdah32"
+TEST_DIR = REPO_ROOT / "test" / "test_ditdah_e1"
 TESTCASE = "isa_artifact_rtl_trace_matches_reference_model"
 
 
@@ -35,8 +35,8 @@ def run_one(name, isa_dir, logs_dir):
         "-C",
         str(TEST_DIR.relative_to(REPO_ROOT)),
         f"TESTCASE={TESTCASE}",
-        f"DITDAH32_ISA_ARTIFACT={name}",
-        f"DITDAH32_ISA_DIR={isa_dir.relative_to(REPO_ROOT) if isa_dir.is_relative_to(REPO_ROOT) else isa_dir}",
+        f"DITDAH_E1_ISA_ARTIFACT={name}",
+        f"DITDAH_E1_ISA_DIR={isa_dir.relative_to(REPO_ROOT) if isa_dir.is_relative_to(REPO_ROOT) else isa_dir}",
     ]
 
     start = time.monotonic()

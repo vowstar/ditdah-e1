@@ -1,8 +1,8 @@
 /* SPDX-FileCopyrightText: 2026 Huang Rui <vowstar@gmail.com> */
 /* SPDX-License-Identifier: MIT
  *
- * Linker script for the DitDah32 compliance gate. Boots the test program
- * from the DitDah32 reset vector (PC = 0x0) and places a fixed-size signature
+ * Linker script for the DitDahE1 compliance gate. Boots the test program
+ * from the DitDahE1 reset vector (PC = 0x0) and places a fixed-size signature
  * region at 0x200, which is high enough to avoid the test code and low
  * enough to fit inside the default 4 KiB cocotb AXI-Lite RAM image. The
  * signature region is bracketed by signature_start and signature_end labels

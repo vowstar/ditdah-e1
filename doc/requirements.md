@@ -1,8 +1,8 @@
-# DitDah32 Requirements
+# DitDahE1 Requirements
 
 ## Product Statement
 
-DitDah32 is a tiny two-stage RV32EC core for low-resource embedded systems.
+DitDahE1 is a tiny two-stage RV32EC core for low-resource embedded systems.
 
 ## Architectural Scope
 
@@ -106,7 +106,7 @@ The first machine-mode subset is intentionally small:
 - If WFI wakes while global `mstatus.MIE` is clear, execution resumes at the
   post-WFI PC without taking an interrupt trap.
 - The WFI sleep decision is independent of PicoRV32 custom IRQ instructions.
-  DitDah32 does not implement PicoRV32 `waitirq`, `retirq`, `maskirq`, `getq`,
+  DitDahE1 does not implement PicoRV32 `waitirq`, `retirq`, `maskirq`, `getq`,
   `setq`, or `timer`.
 
 ## Internal Fetch and Data Model

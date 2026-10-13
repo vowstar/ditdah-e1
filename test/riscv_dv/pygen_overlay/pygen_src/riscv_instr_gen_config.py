@@ -3,7 +3,7 @@
 
 from types import MethodType
 
-from pygen_src.ditdah32_overlay import load_upstream_module
+from pygen_src.ditdah_e1_overlay import load_upstream_module
 from pygen_src.riscv_instr_pkg import riscv_reg_t
 
 
@@ -16,7 +16,7 @@ for _name in dir(_upstream):
 _original_post_randomize = riscv_instr_gen_config.post_randomize
 
 
-def _ditdah32_post_randomize(self):
+def _ditdah_e1_post_randomize(self):
     self.sp = riscv_reg_t.SP
     self.tp = riscv_reg_t.TP
     self.ra = riscv_reg_t.RA
@@ -28,5 +28,5 @@ def _ditdah32_post_randomize(self):
     _original_post_randomize(self)
 
 
-riscv_instr_gen_config.post_randomize = _ditdah32_post_randomize
-cfg.post_randomize = MethodType(_ditdah32_post_randomize, cfg)
+riscv_instr_gen_config.post_randomize = _ditdah_e1_post_randomize
+cfg.post_randomize = MethodType(_ditdah_e1_post_randomize, cfg)

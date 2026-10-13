@@ -3,7 +3,7 @@
 
 import vsc
 
-from pygen_src.ditdah32_overlay import load_upstream_module
+from pygen_src.ditdah_e1_overlay import load_upstream_module
 
 
 _upstream = load_upstream_module("pygen_src.riscv_instr_stream", __file__)
@@ -32,7 +32,7 @@ _RV32E_GPRS = (
 )
 
 
-def _ditdah32_randomize_gpr(self, instr):
+def _ditdah_e1_randomize_gpr(self, instr):
     with instr.randomize_with() as it:
         with vsc.if_then(instr.has_rs1):
             instr.rs1.inside(vsc.rangelist(*_RV32E_GPRS))
@@ -60,4 +60,4 @@ def _ditdah32_randomize_gpr(self, instr):
     return instr
 
 
-riscv_rand_instr_stream.randomize_gpr = _ditdah32_randomize_gpr
+riscv_rand_instr_stream.randomize_gpr = _ditdah_e1_randomize_gpr

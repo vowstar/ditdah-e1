@@ -208,7 +208,7 @@ def build_report(out_dir):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Aggregate DitDah32 external ISS closure evidence")
+    parser = argparse.ArgumentParser(description="Aggregate DitDahE1 external ISS closure evidence")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "iss" / "external_iss_full")
     args = parser.parse_args()
 

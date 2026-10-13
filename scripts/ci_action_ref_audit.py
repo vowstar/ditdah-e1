@@ -129,7 +129,7 @@ def build_report(workflow_path):
 
 def write_markdown(path, report):
     lines = [
-        "# DitDah32 CI Action Reference Audit",
+        "# DitDahE1 CI Action Reference Audit",
         "",
         f"Status: `{report['status']}`",
         "",
@@ -154,7 +154,7 @@ def write_markdown(path, report):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Audit GitHub Actions references used by the DitDah32 workflow")
+    parser = argparse.ArgumentParser(description="Audit GitHub Actions references used by the DitDahE1 workflow")
     parser.add_argument("--workflow", type=Path, default=REPO_ROOT / ".github" / "workflows" / "verification.yml")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "verification")
     args = parser.parse_args()

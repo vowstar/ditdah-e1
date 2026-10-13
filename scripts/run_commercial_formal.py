@@ -25,15 +25,15 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # firtool emits, so this must stay out of result/ proper.
 SVA_DIR = "result/sva"
 RTL_FILES = [
-    f"{SVA_DIR}/DitDah32.sv",
-    f"{SVA_DIR}/DitDah32Gpr.sv",
-    f"{SVA_DIR}/DitDah32_DV.sv",
-    f"{SVA_DIR}/layers-DitDah32Gpr-DV.sv",
-    f"{SVA_DIR}/layers-DitDah32-DV.sv",
+    f"{SVA_DIR}/DitDahE1.sv",
+    f"{SVA_DIR}/DitDahE1Gpr.sv",
+    f"{SVA_DIR}/DitDahE1_DV.sv",
+    f"{SVA_DIR}/layers-DitDahE1Gpr-DV.sv",
+    f"{SVA_DIR}/layers-DitDahE1-DV.sv",
 ]
-BRIDGE = "formal/riscv_formal/ditdah32/ditdah32_trace_top.sv"
-INCLUDE = f"{SVA_DIR}/ref_DitDah32.sv"
-TOP = "ditdah32_trace_top"
+BRIDGE = "formal/riscv_formal/ditdah_e1/ditdah_e1_trace_top.sv"
+INCLUDE = f"{SVA_DIR}/ref_DitDahE1.sv"
+TOP = "ditdah_e1_trace_top"
 
 JG_TCL = """clear -all
 analyze -sv12 +incdir+{rtl} {files}
@@ -167,7 +167,7 @@ def resolved(prop):
 
 def run_engine(host, workdir, module, binary, invocation, tcl, log_path, timeout):
     ssh(host, f"mkdir -p {workdir} && rm -rf {workdir}/jgproj", 120)
-    ssh(host, f"cat > {workdir}/{binary}.tcl <<'DITDAH32_TCL'\n{tcl}\nDITDAH32_TCL", 120)
+    ssh(host, f"cat > {workdir}/{binary}.tcl <<'DITDAH_E1_TCL'\n{tcl}\nDITDAH_E1_TCL", 120)
     start = time.monotonic()
     completed = ssh(host, f"module load {module} && cd {workdir} && {invocation}", timeout)
     # The raw log stays on the host and in the local log file. Vendor banners
@@ -177,10 +177,10 @@ def run_engine(host, workdir, module, binary, invocation, tcl, log_path, timeout
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Prove DitDah32 SVA on a commercial FPV engine")
+    parser = argparse.ArgumentParser(description="Prove DitDahE1 SVA on a commercial FPV engine")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "formal" / "commercial")
-    parser.add_argument("--host", default=os.environ.get("DITDAH32_FPV_HOST"))
-    parser.add_argument("--remote-dir", default=os.environ.get("DITDAH32_FPV_DIR"))
+    parser.add_argument("--host", default=os.environ.get("DITDAH_E1_FPV_HOST"))
+    parser.add_argument("--remote-dir", default=os.environ.get("DITDAH_E1_FPV_DIR"))
     parser.add_argument("--engine", choices=["jg", "vcf", "both"], default="jg")
     parser.add_argument("--time-limit", default="300s")
     parser.add_argument("--timeout", type=int, default=3600)
@@ -204,18 +204,18 @@ def main():
     if missing:
         return publish({"status": "skipped_no_rtl", "missing": missing})
 
-    dv = (REPO_ROOT / SVA_DIR / "DitDah32_DV.sv").read_text(encoding="utf-8")
+    dv = (REPO_ROOT / SVA_DIR / "DitDahE1_DV.sv").read_text(encoding="utf-8")
     if "assert property" not in dv:
         return publish({"status": "skipped_no_sva", "hint": "make build-sva"})
     declared = sva_labels(dv)
 
     if not args.host or not args.remote_dir:
-        return publish({"status": "skipped_no_host", "needs": ["DITDAH32_FPV_HOST", "DITDAH32_FPV_DIR"]})
+        return publish({"status": "skipped_no_host", "needs": ["DITDAH_E1_FPV_HOST", "DITDAH_E1_FPV_DIR"]})
 
     engines = ["jg", "vcf"] if args.engine == "both" else [args.engine]
     catalog = {
-        "jg": (os.environ.get("DITDAH32_FPV_JG_MODULE", "cadence/jasper2103"), "jg"),
-        "vcf": (os.environ.get("DITDAH32_FPV_VCF_MODULE", "synopsys/vc_formal-V-2023.12"), "vcf"),
+        "jg": (os.environ.get("DITDAH_E1_FPV_JG_MODULE", "cadence/jasper2103"), "jg"),
+        "vcf": (os.environ.get("DITDAH_E1_FPV_VCF_MODULE", "synopsys/vc_formal-V-2023.12"), "vcf"),
     }
     reachable = [e for e in engines if engine_available(args.host, *catalog[e])]
     if not reachable:

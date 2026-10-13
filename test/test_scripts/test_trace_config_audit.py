@@ -12,7 +12,7 @@ import trace_config_audit  # noqa: E402
 
 
 TRACE_HEADER = """
-module DitDah32(
+module DitDahE1(
   input clock,
   output trace_valid,
   output [31:0] trace_pc,
@@ -44,7 +44,7 @@ endmodule
 
 
 NO_TRACE_HEADER = """
-module DitDah32(
+module DitDahE1(
   input clock,
   output trap
 );
@@ -53,7 +53,7 @@ endmodule
 
 
 JTAG_HEADER = """
-module DitDah32(
+module DitDahE1(
   input clock,
   input jtag_tck,
   input jtag_tms,
@@ -61,8 +61,8 @@ module DitDah32(
   output jtag_tdo,
   input jtag_trstN
 );
-  DitDah32JtagDtm dtm();
-  DitDah32DebugModule dm();
+  DitDahE1JtagDtm dtm();
+  DitDahE1DebugModule dm();
 endmodule
 """
 
@@ -92,7 +92,7 @@ def test_clean_main_module_passes_both_builds():
 
 def test_main_module_rejects_internal_trace_state():
     verilog = """
-module DitDah32(
+module DitDahE1(
   input clock,
   output trap
 );
@@ -103,12 +103,12 @@ endmodule
     result = trace_config_audit.check_module_text(verilog, expect_trace=False)
 
     assert result["status"] == "fail"
-    assert result["missing"] == ["DitDah32 main module contains trace state or wiring: traceValidReg"]
+    assert result["missing"] == ["DitDahE1 main module contains trace state or wiring: traceValidReg"]
 
 
 def test_header_rejects_direct_rvfi_ports():
     verilog = """
-module DitDah32(
+module DitDahE1(
   input clock,
   output rvfi_valid
 );
@@ -128,7 +128,7 @@ def test_jtag_build_requires_complete_interface_and_modules():
 
     assert result["status"] == "pass"
     assert all(result["jtag_ports"].values())
-    assert result["debug_modules"] == ["DitDah32DebugModule", "DitDah32JtagDtm"]
+    assert result["debug_modules"] == ["DitDahE1DebugModule", "DitDahE1JtagDtm"]
 
 
 def test_non_jtag_build_rejects_debug_surface():

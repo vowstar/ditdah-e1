@@ -4,16 +4,16 @@
 
 #include "bench_result.h"
 
-#ifndef DITDAH32_DHRYSTONE_RUNS
-#define DITDAH32_DHRYSTONE_RUNS 1
+#ifndef DITDAH_E1_DHRYSTONE_RUNS
+#define DITDAH_E1_DHRYSTONE_RUNS 1
 #endif
 
 extern unsigned int __heap_start;
 extern unsigned int __heap_end;
 
-volatile struct ditdah32_bench_result ditdah32_bench_result
+volatile struct ditdah_e1_bench_result ditdah_e1_bench_result
     __attribute__((section(".bench_result")));
-volatile unsigned int ditdah32_bench_timing_state
+volatile unsigned int ditdah_e1_bench_timing_state
     __attribute__((section(".bench_timing")));
 
 static unsigned char *heap_next;
@@ -37,23 +37,23 @@ void bench_report(
     unsigned int value2,
     unsigned int value3)
 {
-    ditdah32_bench_result.magic = DITDAH32_BENCH_MAGIC;
-    ditdah32_bench_result.benchmark_id = benchmark_id;
-    ditdah32_bench_result.status = status;
-    ditdah32_bench_result.value0 = value0;
-    ditdah32_bench_result.value1 = value1;
-    ditdah32_bench_result.value2 = value2;
-    ditdah32_bench_result.value3 = value3;
+    ditdah_e1_bench_result.magic = DITDAH_E1_BENCH_MAGIC;
+    ditdah_e1_bench_result.benchmark_id = benchmark_id;
+    ditdah_e1_bench_result.status = status;
+    ditdah_e1_bench_result.value0 = value0;
+    ditdah_e1_bench_result.value1 = value1;
+    ditdah_e1_bench_result.value2 = value2;
+    ditdah_e1_bench_result.value3 = value3;
 }
 
 void bench_timing_start(void)
 {
-    ditdah32_bench_timing_state = DITDAH32_BENCH_TIMING_START;
+    ditdah_e1_bench_timing_state = DITDAH_E1_BENCH_TIMING_START;
 }
 
 void bench_timing_stop(void)
 {
-    ditdah32_bench_timing_state = DITDAH32_BENCH_TIMING_STOP;
+    ditdah_e1_bench_timing_state = DITDAH_E1_BENCH_TIMING_STOP;
 }
 
 void *bench_malloc(unsigned int size)
@@ -82,10 +82,10 @@ int bench_printf(const char *fmt, ...)
 
     if (starts_with(fmt, "ERROR!") || starts_with(fmt, "Errors detected")
         || starts_with(fmt, "Cannot validate operation")) {
-        ditdah32_bench_result.value3 = 1u;
+        ditdah_e1_bench_result.value3 = 1u;
     }
     if (starts_with(fmt, "Correct operation validated")) {
-        ditdah32_bench_result.value2 = 1u;
+        ditdah_e1_bench_result.value2 = 1u;
     }
 
     return 0;
@@ -101,7 +101,7 @@ int bench_scanf(const char *fmt, ...)
     value = va_arg(args, int *);
     va_end(args);
     if (value) {
-        *value = DITDAH32_DHRYSTONE_RUNS;
+        *value = DITDAH_E1_DHRYSTONE_RUNS;
     }
     return 1;
 }

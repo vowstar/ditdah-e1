@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2026 Huang Rui <vowstar@gmail.com>
 // SPDX-License-Identifier: MIT
 //
-// DitDah32 compliance gate macros. Provides minimal
+// DitDahE1 compliance gate macros. Provides minimal
 // RVTEST_BEGIN / RVMODEL_HALT / RVTEST_SIGUPD-style macros but restricted to
 // x0-x15 so the framework actually runs on a strict RV32E hart. Every
 // macro is self-contained; no model_test.h or rvtest_setup.h is needed.
 //
 // Memory map (matches env/link.ld):
-//   .text       starts at 0x00000000 (DitDah32 reset vector)
+//   .text       starts at 0x00000000 (DitDahE1 reset vector)
 //   .tohost     anchored at 0x00000100 (HTIF tohost slot used by Spike/Sail)
 //   signature   starts at 0x00000200, 256 bytes
 //
@@ -17,8 +17,8 @@
 // signature region if --test-signature is provided. The cocotb harness
 // watches the same address and stops once a non-zero value appears.
 
-#ifndef DITDAH32_COMPLIANCE_H
-#define DITDAH32_COMPLIANCE_H
+#ifndef DITDAH_E1_COMPLIANCE_H
+#define DITDAH_E1_COMPLIANCE_H
 
 #define SIG_BASE 0x200
 
@@ -57,4 +57,4 @@
     .global _start ;\
     _start:
 
-#endif // DITDAH32_COMPLIANCE_H
+#endif // DITDAH_E1_COMPLIANCE_H

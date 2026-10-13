@@ -224,7 +224,7 @@ def audit_external_iss():
 def audit_riscv_dv():
     tool_report = load_tool_audit()
     has_target = "verify-riscv-dv:" in (REPO_ROOT / "Makefile").read_text(encoding="utf-8")
-    has_config = (REPO_ROOT / "test" / "riscv_dv" / "ditdah32_rv32ec.yaml").exists()
+    has_config = (REPO_ROOT / "test" / "riscv_dv" / "ditdah_e1_rv32ec.yaml").exists()
     riscv_dv_report = load_json(REPO_ROOT / "result" / "riscv_dv" / "riscv_dv.json")
     has_report = riscv_dv_report is not None and riscv_dv_report.get("status") in {"pass", "partial"}
     riscv_dv_available = (
@@ -255,7 +255,7 @@ def audit_riscv_dv():
     evidence = [
         artifact("scripts/rv32ec_isa_regress.py"),
         artifact("scripts/run_riscv_dv.py"),
-        artifact("test/riscv_dv/ditdah32_rv32ec.yaml", has_config),
+        artifact("test/riscv_dv/ditdah_e1_rv32ec.yaml", has_config),
         artifact("result/riscv_dv/riscv_dv.json", has_report),
         artifact("result/verification/tool_availability.json", tool_report is not None),
         {"riscv_dv_tool_available": riscv_dv_available},
@@ -271,7 +271,7 @@ def audit_riscv_dv():
     if not riscv_dv_available or not riscv_dv_in_devshell:
         missing.append("RISCV-DV is not integrated into the reproducible tool environment.")
     if not has_config:
-        missing.append("No DitDah32 RV32EC RISCV-DV configuration exists.")
+        missing.append("No DitDahE1 RV32EC RISCV-DV configuration exists.")
     if not has_target or not has_report:
         missing.append("No make verify-riscv-dv target or JSON report exists.")
     if has_report and not generation_clean:
@@ -316,31 +316,31 @@ def audit_rvfi():
     disabled_property_groups = external_step.get("disabled_property_groups", {})
     has_rvfi_target = "verify-rvfi:" in (REPO_ROOT / "Makefile").read_text(encoding="utf-8")
     has_rvfi_lite_target = "verify-rvfi-lite:" in (REPO_ROOT / "Makefile").read_text(encoding="utf-8")
-    has_rvfi_lite_file = (REPO_ROOT / "formal" / "ditdah32_rvfi_lite.sv").exists()
-    has_riscv_formal_wrapper = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah32" / "wrapper.sv").exists()
-    has_riscv_formal_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah32" / "checks.cfg").exists()
-    has_riscv_formal_bus_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah32" / "checks_bus.cfg").exists()
-    has_riscv_formal_csr_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah32" / "checks_csr.cfg").exists()
-    has_riscv_formal_csr_state_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah32" / "checks_csr_state.cfg").exists()
-    has_riscv_formal_liveness_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah32" / "checks_liveness.cfg").exists()
-    has_riscv_formal_order_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah32" / "checks_order.cfg").exists()
-    has_riscv_formal_interrupt_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah32" / "checks_interrupt.cfg").exists()
-    has_riscv_formal_fault_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah32" / "checks_fault.cfg").exists()
+    has_rvfi_lite_file = (REPO_ROOT / "formal" / "ditdah_e1_rvfi_lite.sv").exists()
+    has_riscv_formal_wrapper = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah_e1" / "wrapper.sv").exists()
+    has_riscv_formal_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah_e1" / "checks.cfg").exists()
+    has_riscv_formal_bus_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah_e1" / "checks_bus.cfg").exists()
+    has_riscv_formal_csr_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah_e1" / "checks_csr.cfg").exists()
+    has_riscv_formal_csr_state_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah_e1" / "checks_csr_state.cfg").exists()
+    has_riscv_formal_liveness_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah_e1" / "checks_liveness.cfg").exists()
+    has_riscv_formal_order_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah_e1" / "checks_order.cfg").exists()
+    has_riscv_formal_interrupt_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah_e1" / "checks_interrupt.cfg").exists()
+    has_riscv_formal_fault_cfg = (REPO_ROOT / "formal" / "riscv_formal" / "ditdah_e1" / "checks_fault.cfg").exists()
     riscv_formal_available = tool_capability(tool_report, "riscv_formal_suite")
     symbiyosys_available = tool_capability(tool_report, "symbiyosys_available")
     evidence = [
         artifact("result/verification/tool_availability.json", tool_report is not None),
-        artifact("formal/ditdah32_safety.sv"),
-        artifact("formal/ditdah32_rvfi_lite.sv", has_rvfi_lite_file),
-        artifact("formal/riscv_formal/ditdah32/wrapper.sv", has_riscv_formal_wrapper),
-        artifact("formal/riscv_formal/ditdah32/checks.cfg", has_riscv_formal_cfg),
-        artifact("formal/riscv_formal/ditdah32/checks_bus.cfg", has_riscv_formal_bus_cfg),
-        artifact("formal/riscv_formal/ditdah32/checks_csr.cfg", has_riscv_formal_csr_cfg),
-        artifact("formal/riscv_formal/ditdah32/checks_csr_state.cfg", has_riscv_formal_csr_state_cfg),
-        artifact("formal/riscv_formal/ditdah32/checks_liveness.cfg", has_riscv_formal_liveness_cfg),
-        artifact("formal/riscv_formal/ditdah32/checks_order.cfg", has_riscv_formal_order_cfg),
-        artifact("formal/riscv_formal/ditdah32/checks_interrupt.cfg", has_riscv_formal_interrupt_cfg),
-        artifact("formal/riscv_formal/ditdah32/checks_fault.cfg", has_riscv_formal_fault_cfg),
+        artifact("formal/ditdah_e1_safety.sv"),
+        artifact("formal/ditdah_e1_rvfi_lite.sv", has_rvfi_lite_file),
+        artifact("formal/riscv_formal/ditdah_e1/wrapper.sv", has_riscv_formal_wrapper),
+        artifact("formal/riscv_formal/ditdah_e1/checks.cfg", has_riscv_formal_cfg),
+        artifact("formal/riscv_formal/ditdah_e1/checks_bus.cfg", has_riscv_formal_bus_cfg),
+        artifact("formal/riscv_formal/ditdah_e1/checks_csr.cfg", has_riscv_formal_csr_cfg),
+        artifact("formal/riscv_formal/ditdah_e1/checks_csr_state.cfg", has_riscv_formal_csr_state_cfg),
+        artifact("formal/riscv_formal/ditdah_e1/checks_liveness.cfg", has_riscv_formal_liveness_cfg),
+        artifact("formal/riscv_formal/ditdah_e1/checks_order.cfg", has_riscv_formal_order_cfg),
+        artifact("formal/riscv_formal/ditdah_e1/checks_interrupt.cfg", has_riscv_formal_interrupt_cfg),
+        artifact("formal/riscv_formal/ditdah_e1/checks_fault.cfg", has_riscv_formal_fault_cfg),
         artifact("scripts/run_formal.py"),
         artifact("scripts/run_rvfi_lite.py"),
         artifact("scripts/run_rvfi.py"),
@@ -376,21 +376,21 @@ def audit_rvfi():
     if not has_rvfi_lite_file:
         missing.append("RVFI-lite adapter file is missing.")
     if not has_riscv_formal_wrapper:
-        missing.append("No DitDah32 riscv-formal wrapper exists.")
+        missing.append("No DitDahE1 riscv-formal wrapper exists.")
     if not has_riscv_formal_cfg:
-        missing.append("No DitDah32 riscv-formal checks.cfg exists.")
+        missing.append("No DitDahE1 riscv-formal checks.cfg exists.")
     if not has_riscv_formal_bus_cfg:
-        missing.append("No DitDah32 riscv-formal checks_bus.cfg exists.")
+        missing.append("No DitDahE1 riscv-formal checks_bus.cfg exists.")
     if not has_riscv_formal_csr_cfg:
-        missing.append("No DitDah32 riscv-formal checks_csr.cfg exists.")
+        missing.append("No DitDahE1 riscv-formal checks_csr.cfg exists.")
     if not has_riscv_formal_csr_state_cfg:
-        missing.append("No DitDah32 riscv-formal checks_csr_state.cfg exists.")
+        missing.append("No DitDahE1 riscv-formal checks_csr_state.cfg exists.")
     if not has_riscv_formal_liveness_cfg:
-        missing.append("No DitDah32 riscv-formal checks_liveness.cfg exists.")
+        missing.append("No DitDahE1 riscv-formal checks_liveness.cfg exists.")
     if not has_riscv_formal_order_cfg:
-        missing.append("No DitDah32 riscv-formal checks_order.cfg exists.")
+        missing.append("No DitDahE1 riscv-formal checks_order.cfg exists.")
     if not has_riscv_formal_interrupt_cfg:
-        missing.append("No DitDah32 riscv-formal checks_interrupt.cfg exists.")
+        missing.append("No DitDahE1 riscv-formal checks_interrupt.cfg exists.")
     if not has_rvfi_lite_target:
         missing.append("No make verify-rvfi-lite target exists.")
     if not has_rvfi_target:
@@ -715,7 +715,7 @@ def audit_compliance():
             "Compliance tests compile cleanly for RV32E (-march=rv32ec_zicsr, ilp32e ABI) in both DUT (base 0) and ISS (base 0x80000000) variants.",
             "Sail (sail_riscv_sim) runs every ISS variant, exits via the HTIF tohost convention, and dumps each begin/end_signature region into result/compliance/sail_signatures/<name>/signature.txt.",
             "The Sail-derived reference matches the hand-computed test/compliance/manifest.json wherever the two corpora overlap.",
-            "Each compiled test runs on DitDah32 via the cocotb harness and the AXI-RAM signature region matches the Sail-derived reference word-for-word.",
+            "Each compiled test runs on DitDahE1 via the cocotb harness and the AXI-RAM signature region matches the Sail-derived reference word-for-word.",
         ],
     )
 
@@ -766,7 +766,7 @@ def audit_certified_benchmarks():
 
 def write_markdown(path, report):
     lines = [
-        "# DitDah32 Open Gap Audit",
+        "# DitDahE1 Open Gap Audit",
         "",
         f"Status: `{report['status']}`",
         f"Open or partial gaps: {report['summary']['not_closed']} / {report['summary']['total']}",
@@ -782,7 +782,7 @@ def write_markdown(path, report):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Audit DitDah32 open verification gaps")
+    parser = argparse.ArgumentParser(description="Audit DitDahE1 open verification gaps")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "verification")
     parser.add_argument("--fail-on-unclosed", action="store_true")
     args = parser.parse_args()

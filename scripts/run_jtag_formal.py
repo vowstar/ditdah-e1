@@ -12,14 +12,14 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RTL_FILES = [
-    "result/jtag/DitDah32JtagDtm.sv",
-    "result/jtag/DitDah32DebugModule.sv",
+    "result/jtag/DitDahE1JtagDtm.sv",
+    "result/jtag/DitDahE1DebugModule.sv",
 ]
-HARNESS = "formal/ditdah32_jtag.sv"
-PROBE_TOP = "formal/ditdah32_jtag_top.sv"
+HARNESS = "formal/ditdah_e1_jtag.sv"
+PROBE_TOP = "formal/ditdah_e1_jtag_top.sv"
 PROOFS = [
-    ("dtm_protocol", "DitDah32JtagDtmFormal", "ditdah32_jtag_dtm_top"),
-    ("dm_protocol", "DitDah32DebugModuleFormal", "ditdah32_debug_module_top"),
+    ("dtm_protocol", "DitDahE1JtagDtmFormal", "ditdah_e1_jtag_dtm_top"),
+    ("dm_protocol", "DitDahE1DebugModuleFormal", "ditdah_e1_debug_module_top"),
 ]
 
 

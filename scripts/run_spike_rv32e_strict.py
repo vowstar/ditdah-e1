@@ -142,7 +142,7 @@ def run_case(case, out_dir, base, timeout_seconds):
     start = time.monotonic()
     spike_log_path = logs_dir / f"{case.name}.spike.log"
     spike_stderr_path = logs_dir / f"{case.name}.spike.stderr.log"
-    with tempfile.TemporaryDirectory(prefix=f"ditdah32-spike-strict-{case.name}-") as temp_name:
+    with tempfile.TemporaryDirectory(prefix=f"ditdah-e1-spike-strict-{case.name}-") as temp_name:
         work_dir = Path(temp_name)
         elf_path = build_elf(case.name, case.words, work_dir, base, logs_dir)
         timeout_cmd = shutil.which("timeout")
@@ -208,7 +208,7 @@ def main():
         "isa": "rv32ec_zicsr",
         "base": hex32(args.base),
         "limitations": [
-            "Spike commit logs do not expose DitDah32 trap-cause names.",
+            "Spike commit logs do not expose DitDahE1 trap-cause names.",
             "This gate proves the local model reports rv32e_register and Spike does not commit the RV32E-illegal instruction.",
             "The check is a strict RV32E negative supplement to the legal-program Sail full matrix.",
         ],

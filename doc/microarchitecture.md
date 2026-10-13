@@ -1,10 +1,10 @@
-# DitDah32 Microarchitecture
+# DitDahE1 Microarchitecture
 
-![DitDah32 microarchitecture](ditdah32_microarchitecture.drawio.svg)
+![DitDahE1 microarchitecture](ditdah_e1_microarchitecture.drawio.svg)
 
 ## Overview
 
-DitDah32 is a two-stage in-order RV32EC core:
+DitDahE1 is a two-stage in-order RV32EC core:
 
 - IF: instruction fetch and instruction-buffer maintenance.
 - EX/WB: decode, execute, memory access, trap decision, and register writeback.

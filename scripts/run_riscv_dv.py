@@ -251,7 +251,7 @@ def write_toolchain_files(build_dir):
     include_dir.mkdir(parents=True, exist_ok=True)
     (include_dir / "user_define.h").write_text("", encoding="utf-8")
     (include_dir / "user_init.s").write_text("", encoding="utf-8")
-    linker_script = build_dir / "ditdah32_riscv_dv.ld"
+    linker_script = build_dir / "ditdah_e1_riscv_dv.ld"
     linker_script.write_text(
         "\n".join(
             [
@@ -461,12 +461,12 @@ def run_generator_for_seed(args, seed, generator_command):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run or audit the DitDah32 RISCV-DV flow")
-    parser.add_argument("--config", type=Path, default=REPO_ROOT / "test" / "riscv_dv" / "ditdah32_rv32ec.yaml")
+    parser = argparse.ArgumentParser(description="Run or audit the DitDahE1 RISCV-DV flow")
+    parser.add_argument("--config", type=Path, default=REPO_ROOT / "test" / "riscv_dv" / "ditdah_e1_rv32ec.yaml")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "riscv_dv")
-    parser.add_argument("--target", default="ditdah32_rv32ec")
-    parser.add_argument("--test", default="ditdah32_rv32ec_smoke")
-    parser.add_argument("--custom-target", type=Path, default=REPO_ROOT / "test" / "riscv_dv" / "target" / "ditdah32_rv32ec")
+    parser.add_argument("--target", default="ditdah_e1_rv32ec")
+    parser.add_argument("--test", default="ditdah_e1_rv32ec_smoke")
+    parser.add_argument("--custom-target", type=Path, default=REPO_ROOT / "test" / "riscv_dv" / "target" / "ditdah_e1_rv32ec")
     parser.add_argument("--isa-out-dir", type=Path, default=REPO_ROOT / "result" / "riscv_dv" / "isa")
     parser.add_argument("--rtl-out-dir", type=Path, default=REPO_ROOT / "result" / "rtl_trace" / "riscv_dv")
     parser.add_argument("--iterations", type=int, default=1)
@@ -520,13 +520,13 @@ def main():
     steps = []
     if config is None:
         steps.append({
-            "name": "load_ditdah32_rv32ec_config",
+            "name": "load_ditdah_e1_rv32ec_config",
             "status": "fail",
             "error": config_error,
         })
     else:
         steps.append({
-            "name": "load_ditdah32_rv32ec_config",
+            "name": "load_ditdah_e1_rv32ec_config",
             "status": "pass",
             "config": rel(config_path),
             "isa": config.get("isa", {}),

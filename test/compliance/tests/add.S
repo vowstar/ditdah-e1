@@ -3,7 +3,7 @@
 // add (RV32I/E base) compliance test.
 //
 // Three deterministic add computations are placed into the .signature
-// region. The reference (Spike) and DUT (DitDah32) must produce identical
+// region. The reference (Spike) and DUT (DitDahE1) must produce identical
 // signature bytes.
 
 #include "compliance.h"

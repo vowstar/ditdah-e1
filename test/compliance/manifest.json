@@ -1,5 +1,5 @@
 {
-  "comment": "DitDah32 compliance gate signature manifest. Each entry records the expected 32-bit signature words a passing implementation must write to the signature region (starting at address 0x200). Hand-computed from the ISA semantics; future work: integrate a reference ISS so signatures are generated automatically.",
+  "comment": "DitDahE1 compliance gate signature manifest. Each entry records the expected 32-bit signature words a passing implementation must write to the signature region (starting at address 0x200). Hand-computed from the ISA semantics; future work: integrate a reference ISS so signatures are generated automatically.",
   "sig_base": 512,
   "tests": [
     {

@@ -60,7 +60,7 @@ module test_jtag;
         jtag_trstN = 1'b0;
     end
 
-    DitDah32 u_ditdah32 (
+    DitDahE1 u_ditdah_e1 (
         .clock               (clk),
         .reset               (reset),
         .axi_aw_valid        (axi_aw_valid),

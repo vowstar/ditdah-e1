@@ -79,9 +79,9 @@ def build_one(name, sources, extra_cflags, defines, args):
         *COMMON_CFLAGS,
         *extra_cflags,
         "-Ibench/common",
-        "-Ibench/coremark/ditdah32",
+        "-Ibench/coremark/ditdah_e1",
         "-Ibench/coremark/upstream",
-        "-Ibench/dhrystone/ditdah32",
+        "-Ibench/dhrystone/ditdah_e1",
         "-Ibench/dhrystone/upstream",
         *[f"-D{key}={value}" for key, value in defines.items()],
         "-Wl,-T,bench/common/link.ld",
@@ -99,8 +99,8 @@ def build_one(name, sources, extra_cflags, defines, args):
     with disasm.open("w", encoding="utf-8") as disasm_file:
         subprocess.run([objdump, "-d", str(elf)], cwd=REPO_ROOT, check=True, stdout=disasm_file)
 
-    result_addr = read_symbol(nm, elf, "ditdah32_bench_result")
-    timing_addr = read_symbol(nm, elf, "ditdah32_bench_timing_state")
+    result_addr = read_symbol(nm, elf, "ditdah_e1_bench_result")
+    timing_addr = read_symbol(nm, elf, "ditdah_e1_bench_timing_state")
     image_end = read_symbol(nm, elf, "__image_end")
 
     manifest.write_text(
@@ -128,7 +128,7 @@ def build_one(name, sources, extra_cflags, defines, args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build DitDah32 RV32EC benchmark images")
+    parser = argparse.ArgumentParser(description="Build DitDahE1 RV32EC benchmark images")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "bench")
     parser.add_argument("--prefix", default=os.environ.get("RISCV_PREFIX", "riscv32-unknown-elf-"))
     parser.add_argument("--coremark-iterations", type=int, default=1)
@@ -147,7 +147,7 @@ def main():
     build_one(
         "coremark",
         [
-            "bench/coremark/ditdah32/core_portme.c",
+            "bench/coremark/ditdah_e1/core_portme.c",
             "bench/coremark/upstream/core_list_join.c",
             "bench/coremark/upstream/core_main.c",
             "bench/coremark/upstream/core_matrix.c",
@@ -156,12 +156,12 @@ def main():
         ],
         ["-std=gnu99"],
         {
-            "DITDAH32_COREMARK_ITERATIONS": args.coremark_iterations,
-            "DITDAH32_COREMARK_SEED1": args.coremark_seed1,
-            "DITDAH32_COREMARK_SEED2": args.coremark_seed2,
-            "DITDAH32_COREMARK_SEED3": args.coremark_seed3,
+            "DITDAH_E1_COREMARK_ITERATIONS": args.coremark_iterations,
+            "DITDAH_E1_COREMARK_SEED1": args.coremark_seed1,
+            "DITDAH_E1_COREMARK_SEED2": args.coremark_seed2,
+            "DITDAH_E1_COREMARK_SEED3": args.coremark_seed3,
             "TOTAL_DATA_SIZE": args.coremark_total_data_size,
-            "main": "ditdah32_main",
+            "main": "ditdah_e1_main",
         },
         args,
     )
@@ -169,7 +169,7 @@ def main():
     build_one(
         "dhrystone",
         [
-            "bench/dhrystone/ditdah32/main.c",
+            "bench/dhrystone/ditdah_e1/main.c",
             "bench/dhrystone/upstream/dhry_1.c",
             "bench/dhrystone/upstream/dhry_2.c",
         ],
@@ -181,7 +181,7 @@ def main():
             "-Wno-builtin-declaration-mismatch",
         ],
         {
-            "DITDAH32_DHRYSTONE_RUNS": args.dhrystone_runs,
+            "DITDAH_E1_DHRYSTONE_RUNS": args.dhrystone_runs,
             "main": "dhrystone_upstream_main",
             "printf": "bench_printf",
             "scanf": "bench_scanf",

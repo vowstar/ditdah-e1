@@ -2,7 +2,7 @@
 
 ## Base Rules
 
-DitDah32 implements a small RV32EC base plus the project control profile:
+DitDahE1 implements a small RV32EC base plus the project control profile:
 
 - XLEN is 32.
 - Integer register addresses are 4 bits wide.

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 Huang Rui <vowstar@gmail.com>
 # SPDX-License-Identifier: MIT
-"""Reproducible RTL benchmark scoring for DitDah32.
+"""Reproducible RTL benchmark scoring for DitDahE1.
 
 Builds CoreMark/Dhrystone for RV32EC, runs the no-trace netlist under a
-standalone Verilator harness (bench/sim/ditdah32_bench_tb.sv) against two
+standalone Verilator harness (bench/sim/ditdah_e1_bench_tb.sv) against two
 memory models, and emits frequency-normalised CoreMark/MHz and DMIPS/MHz.
 Cycle counts are exact (simulator) between the in-program timing markers.
 Scores are RTL cycle-accurate, not EEMBC-certified.
@@ -59,7 +59,7 @@ def build_benchmarks(out_dir, coremark_iterations, dhrystone_runs):
 
 def build_sim(netlist, tb, sim_dir):
     sim_dir.mkdir(parents=True, exist_ok=True)
-    binary = sim_dir / "obj_dir" / "ditdah32_bench_sim"
+    binary = sim_dir / "obj_dir" / "ditdah_e1_bench_sim"
     newest_src = max(netlist.stat().st_mtime, tb.stat().st_mtime)
     if binary.exists() and binary.stat().st_mtime >= newest_src:
         return binary
@@ -67,8 +67,8 @@ def build_sim(netlist, tb, sim_dir):
         "verilator", "--binary", "--timing", "-j", "0",
         "-Wno-SELRANGE", "-Wno-WIDTH", "-Wno-BLKANDNBLK", "-Wno-MINTYPMAXDLY",
         "-Wno-CASEINCOMPLETE", "-Wno-UNOPTFLAT", "--bbox-unsup", "-Wno-fatal",
-        "--top-module", "ditdah32_bench_tb", "-o", "ditdah32_bench_sim",
-        str(netlist.parent / "DitDah32Gpr.sv"), str(netlist), str(tb),
+        "--top-module", "ditdah_e1_bench_tb", "-o", "ditdah_e1_bench_sim",
+        str(netlist.parent / "DitDahE1Gpr.sv"), str(netlist), str(tb),
     ], cwd=sim_dir)
     if not binary.exists():
         raise SystemExit(f"verilator did not produce {binary}")
@@ -137,7 +137,7 @@ def write_markdown(path, report):
             f"{dh['dmips_per_mhz']:.3f} |"
         )
     lines = [
-        "# DitDah32 RTL benchmark scores",
+        "# DitDahE1 RTL benchmark scores",
         "",
         "RTL cycle-accurate, frequency-normalised. Not EEMBC-certified.",
         "",
@@ -158,7 +158,7 @@ def write_markdown(path, report):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--bench-dir", type=Path, default=REPO_ROOT / "result" / "bench-score")
-    p.add_argument("--netlist", type=Path, default=REPO_ROOT / "result" / "DitDah32.sv")
+    p.add_argument("--netlist", type=Path, default=REPO_ROOT / "result" / "DitDahE1.sv")
     p.add_argument("--coremark-iterations", type=int, default=200)
     p.add_argument("--dhrystone-runs", type=int, default=100000)
     p.add_argument("--frequency-mhz", type=float, default=100.0)
@@ -167,7 +167,7 @@ def main():
     args = p.parse_args()
 
     if not args.netlist.exists():
-        raise SystemExit(f"missing {args.netlist}; run build-ditdah32 first")
+        raise SystemExit(f"missing {args.netlist}; run build-ditdah-e1 first")
     if "trace_" in args.netlist.read_text(encoding="utf-8"):
         raise SystemExit(f"{args.netlist} has trace ports; score the no-trace netlist")
 
@@ -175,7 +175,7 @@ def main():
     if not args.skip_build_bench:
         build_benchmarks(bench_dir, args.coremark_iterations, args.dhrystone_runs)
 
-    tb = REPO_ROOT / "bench" / "sim" / "ditdah32_bench_tb.sv"
+    tb = REPO_ROOT / "bench" / "sim" / "ditdah_e1_bench_tb.sv"
     sim_dir = bench_dir / "sim"
     binary = build_sim(args.netlist, tb, sim_dir)
 

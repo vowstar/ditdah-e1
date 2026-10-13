@@ -35,7 +35,7 @@ def test_ci_remote_evidence_passes_with_smoke_artifact(tmp_path, monkeypatch):
                     "url": "https://github.com/owner/repo/actions/runs/11",
                     "createdAt": "2026-05-15T00:00:00Z",
                     "updatedAt": "2026-05-15T00:01:00Z",
-                    "workflowName": "DitDah32 Verification",
+                    "workflowName": "DitDahE1 Verification",
                 },
                 {
                     "databaseId": 22,
@@ -48,7 +48,7 @@ def test_ci_remote_evidence_passes_with_smoke_artifact(tmp_path, monkeypatch):
                     "url": "https://github.com/owner/repo/actions/runs/22",
                     "createdAt": "2026-05-15T00:02:00Z",
                     "updatedAt": "2026-05-15T00:03:00Z",
-                    "workflowName": "DitDah32 Verification",
+                    "workflowName": "DitDahE1 Verification",
                 },
             ], ""
         if cmd[:3] == ["gh", "run", "view"]:
@@ -56,7 +56,7 @@ def test_ci_remote_evidence_passes_with_smoke_artifact(tmp_path, monkeypatch):
             name = "Smoke" if run_id == "11" else "Full"
             return 0, {"jobs": [{"name": name, "status": "completed", "conclusion": "success"}]}, ""
         if cmd[:2] == ["gh", "api"]:
-            artifact_name = "ditdah32-smoke-11" if "/11/" in cmd[2] else "ditdah32-full-22"
+            artifact_name = "ditdah-e1-smoke-11" if "/11/" in cmd[2] else "ditdah-e1-full-22"
             return 0, {"artifacts": [{"name": artifact_name}]}, ""
         raise AssertionError(f"unexpected command: {cmd}")
 
@@ -141,7 +141,7 @@ def test_ci_remote_evidence_rejects_artifacts_from_the_wrong_head(tmp_path, monk
                     "url": "https://github.com/owner/repo/actions/runs/11",
                     "createdAt": "2026-05-15T00:00:00Z",
                     "updatedAt": "2026-05-15T00:01:00Z",
-                    "workflowName": "DitDah32 Verification",
+                    "workflowName": "DitDahE1 Verification",
                 },
                 {
                     "databaseId": 22,
@@ -154,7 +154,7 @@ def test_ci_remote_evidence_rejects_artifacts_from_the_wrong_head(tmp_path, monk
                     "url": "https://github.com/owner/repo/actions/runs/22",
                     "createdAt": "2026-05-15T00:02:00Z",
                     "updatedAt": "2026-05-15T00:03:00Z",
-                    "workflowName": "DitDah32 Verification",
+                    "workflowName": "DitDahE1 Verification",
                 },
             ], ""
         if cmd[:3] == ["gh", "run", "view"]:
@@ -162,7 +162,7 @@ def test_ci_remote_evidence_rejects_artifacts_from_the_wrong_head(tmp_path, monk
             name = "Smoke" if run_id == "11" else "Full"
             return 0, {"jobs": [{"name": name, "status": "completed", "conclusion": "success"}]}, ""
         if cmd[:2] == ["gh", "api"]:
-            artifact_name = "ditdah32-smoke-11" if "/11/" in cmd[2] else "ditdah32-full-22"
+            artifact_name = "ditdah-e1-smoke-11" if "/11/" in cmd[2] else "ditdah-e1-full-22"
             return 0, {"artifacts": [{"name": artifact_name}]}, ""
         raise AssertionError(f"unexpected command: {cmd}")
 
@@ -212,7 +212,7 @@ def test_ci_remote_evidence_rejects_artifact_without_matching_profile_job(tmp_pa
                     "url": "https://github.com/owner/repo/actions/runs/11",
                     "createdAt": "2026-05-15T00:00:00Z",
                     "updatedAt": "2026-05-15T00:01:00Z",
-                    "workflowName": "DitDah32 Verification",
+                    "workflowName": "DitDahE1 Verification",
                 },
                 {
                     "databaseId": 22,
@@ -225,7 +225,7 @@ def test_ci_remote_evidence_rejects_artifact_without_matching_profile_job(tmp_pa
                     "url": "https://github.com/owner/repo/actions/runs/22",
                     "createdAt": "2026-05-15T00:02:00Z",
                     "updatedAt": "2026-05-15T00:03:00Z",
-                    "workflowName": "DitDah32 Verification",
+                    "workflowName": "DitDahE1 Verification",
                 },
             ], ""
         if cmd[:3] == ["gh", "run", "view"]:
@@ -233,7 +233,7 @@ def test_ci_remote_evidence_rejects_artifact_without_matching_profile_job(tmp_pa
             name = "Full" if run_id == "11" else "Full"
             return 0, {"jobs": [{"name": name, "status": "completed", "conclusion": "success"}]}, ""
         if cmd[:2] == ["gh", "api"]:
-            artifact_name = "ditdah32-smoke-11" if "/11/" in cmd[2] else "ditdah32-full-22"
+            artifact_name = "ditdah-e1-smoke-11" if "/11/" in cmd[2] else "ditdah-e1-full-22"
             return 0, {"artifacts": [{"name": artifact_name}]}, ""
         raise AssertionError(f"unexpected command: {cmd}")
 
@@ -324,7 +324,7 @@ def test_ci_remote_dispatch_runs_profiles_in_order_and_waits(tmp_path, monkeypat
                         "url": f"https://github.com/owner/repo/actions/runs/{run_ids[profile]}",
                         "createdAt": "2026-05-15T00:00:00Z",
                         "updatedAt": "2026-05-15T00:00:00Z",
-                        "workflowName": "DitDah32 Verification",
+                        "workflowName": "DitDahE1 Verification",
                     }
                 )
             return 0, runs, ""
@@ -340,7 +340,7 @@ def test_ci_remote_dispatch_runs_profiles_in_order_and_waits(tmp_path, monkeypat
                 "url": f"https://github.com/owner/repo/actions/runs/{run_id}",
                 "createdAt": "2026-05-15T00:00:00Z",
                 "updatedAt": "2026-05-15T00:01:00Z",
-                "workflowName": "DitDah32 Verification",
+                "workflowName": "DitDahE1 Verification",
                 "jobs": [{"name": next(name for name, value in run_ids.items() if value == run_id), "conclusion": "success"}],
             }, ""
         raise AssertionError(f"unexpected command: {cmd}")
@@ -415,7 +415,7 @@ def test_ci_remote_dispatch_rejects_run_from_wrong_head(tmp_path, monkeypatch):
                     "url": "https://github.com/owner/repo/actions/runs/404",
                     "createdAt": "2026-05-15T00:00:00Z",
                     "updatedAt": "2026-05-15T00:00:00Z",
-                    "workflowName": "DitDah32 Verification",
+                    "workflowName": "DitDahE1 Verification",
                 }
             ], ""
         raise AssertionError(f"unexpected command: {cmd}")
@@ -491,7 +491,7 @@ def test_ci_remote_dispatch_rejects_run_with_wrong_profile_job(tmp_path, monkeyp
                     "url": "https://github.com/owner/repo/actions/runs/505",
                     "createdAt": "2026-05-15T00:00:00Z",
                     "updatedAt": "2026-05-15T00:00:00Z",
-                    "workflowName": "DitDah32 Verification",
+                    "workflowName": "DitDahE1 Verification",
                 }
             ], ""
         if cmd[:3] == ["gh", "run", "view"]:
@@ -504,7 +504,7 @@ def test_ci_remote_dispatch_rejects_run_with_wrong_profile_job(tmp_path, monkeyp
                 "url": "https://github.com/owner/repo/actions/runs/505",
                 "createdAt": "2026-05-15T00:00:00Z",
                 "updatedAt": "2026-05-15T00:01:00Z",
-                "workflowName": "DitDah32 Verification",
+                "workflowName": "DitDahE1 Verification",
                 "jobs": [{"name": "Full", "conclusion": "success"}],
             }, ""
         raise AssertionError(f"unexpected command: {cmd}")
@@ -580,7 +580,7 @@ def test_ci_remote_dispatch_ignores_unrelated_run_until_profile_job_matches(tmp_
                     "url": "https://github.com/owner/repo/actions/runs/505",
                     "createdAt": "2026-05-15T00:00:00Z",
                     "updatedAt": "2026-05-15T00:00:00Z",
-                    "workflowName": "DitDah32 Verification",
+                    "workflowName": "DitDahE1 Verification",
                 }
             ]
             if clock["now"] >= 1.0:
@@ -596,7 +596,7 @@ def test_ci_remote_dispatch_ignores_unrelated_run_until_profile_job_matches(tmp_
                         "url": "https://github.com/owner/repo/actions/runs/606",
                         "createdAt": "2026-05-15T00:00:01Z",
                         "updatedAt": "2026-05-15T00:00:01Z",
-                        "workflowName": "DitDah32 Verification",
+                        "workflowName": "DitDahE1 Verification",
                     }
                 )
             return 0, runs, ""
@@ -613,7 +613,7 @@ def test_ci_remote_dispatch_ignores_unrelated_run_until_profile_job_matches(tmp_
                 "url": f"https://github.com/owner/repo/actions/runs/{run_id}",
                 "createdAt": "2026-05-15T00:00:00Z",
                 "updatedAt": "2026-05-15T00:01:00Z",
-                "workflowName": "DitDah32 Verification",
+                "workflowName": "DitDahE1 Verification",
                 "jobs": [{"name": job_name, "conclusion": "success"}],
             }, ""
         raise AssertionError(f"unexpected command: {cmd}")

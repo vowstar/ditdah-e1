@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-TEST_DIR = REPO_ROOT / "test" / "test_ditdah32"
+TEST_DIR = REPO_ROOT / "test" / "test_ditdah_e1"
 
 
 def run(cmd, log_path):
@@ -52,7 +52,7 @@ def parse_lcov(path):
 
     merged = {"line_total": 0, "line_hit": 0, "branch_total": 0, "branch_hit": 0}
     for record in records:
-        if not record["source"].endswith(("result/DitDah32.sv", "result/DitDah32Gpr.sv")):
+        if not record["source"].endswith(("result/DitDahE1.sv", "result/DitDahE1Gpr.sv")):
             continue
         merged["line_total"] += len(record["lines"])
         merged["line_hit"] += sum(1 for count in record["lines"].values() if count > 0)
@@ -69,7 +69,7 @@ def parse_lcov(path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run DitDah32 Verilator HDL coverage signoff gate")
+    parser = argparse.ArgumentParser(description="Run DitDahE1 Verilator HDL coverage signoff gate")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "coverage" / "signoff")
     parser.add_argument("--line-threshold", type=float, default=80.0)
     parser.add_argument("--branch-threshold", type=float, default=55.0)
@@ -85,11 +85,11 @@ def main():
     annotated_dir.mkdir(parents=True, exist_ok=True)
 
     steps = []
-    steps.append(run(["make", "-C", "test/test_ditdah32", "clean"], logs_dir / "clean.log"))
+    steps.append(run(["make", "-C", "test/test_ditdah_e1", "clean"], logs_dir / "clean.log"))
     cmd = [
         "make",
         "-C",
-        "test/test_ditdah32",
+        "test/test_ditdah_e1",
         "SIM=verilator",
         "WAVES=0",
         "HDL_COVERAGE=1",

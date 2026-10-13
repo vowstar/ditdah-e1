@@ -24,17 +24,17 @@ def resolve_slang_so():
 
 
 # The trace surface lives in the layer("DV") bind collateral. read_slang reads
-# the core and resolves the probe XMRs through ditdah32_trace_top; the adapter
+# the core and resolves the probe XMRs through ditdah_e1_trace_top; the adapter
 # (with anyseq inputs) is then read with yosys read_verilog -formal.
-TRACE_TOP = "formal/riscv_formal/ditdah32/ditdah32_trace_top.sv"
+TRACE_TOP = "formal/riscv_formal/ditdah_e1/ditdah_e1_trace_top.sv"
 
 
 def read_slang_dut_cmd():
     slang_so = resolve_slang_so()
     return (
         f"plugin -i {slang_so}; "
-        f"read_slang -Iresult {TRACE_TOP} result/DitDah32.sv result/DitDah32Gpr.sv result/DitDah32_DV.sv "
-        f"result/layers-DitDah32-DV.sv --top ditdah32_trace_top; "
+        f"read_slang -Iresult {TRACE_TOP} result/DitDahE1.sv result/DitDahE1Gpr.sv result/DitDahE1_DV.sv "
+        f"result/layers-DitDahE1-DV.sv --top ditdah_e1_trace_top; "
     )
 
 
@@ -58,7 +58,7 @@ def run(cmd, log_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run DitDah32 local formal safety checks")
+    parser = argparse.ArgumentParser(description="Run DitDahE1 local formal safety checks")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "formal")
     parser.add_argument("--depth", type=int, default=24)
     args = parser.parse_args()
@@ -68,8 +68,8 @@ def main():
         out_dir = REPO_ROOT / out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    smt_path = out_dir / "ditdah32_safety.smt2"
-    vcd_path = out_dir / "ditdah32_safety.vcd"
+    smt_path = out_dir / "ditdah_e1_safety.smt2"
+    vcd_path = out_dir / "ditdah_e1_safety.vcd"
     yosys_log = out_dir / "yosys.log"
     smtbmc_log = out_dir / "smtbmc.log"
 
@@ -82,8 +82,8 @@ def main():
                 "-p",
                 (
                     read_slang_dut_cmd()
-                    + "read_verilog -formal -sv formal/ditdah32_safety.sv; "
-                    "prep -top DitDah32Safety; "
+                    + "read_verilog -formal -sv formal/ditdah_e1_safety.sv; "
+                    "prep -top DitDahE1Safety; "
                     # yosys lowers SV assert()/assume() to edge-triggered
                     # $check cells; write_smt2 emits only $assert/$assume, so
                     # without this the SMT2 assertion function is constant true.

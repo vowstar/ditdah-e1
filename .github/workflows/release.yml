@@ -63,11 +63,11 @@ jobs:
       - name: Upload Release Assets
         uses: actions/upload-artifact@v4
         with:
-          name: ditdah32-release-${{ github.ref_name }}
+          name: ditdah-e1-release-${{ github.ref_name }}
           if-no-files-found: error
           retention-days: 7
           path: |
-            result/release/ditdah32-*.tar.gz
+            result/release/ditdah-e1-*.tar.gz
             result/release/SHA256SUMS
 
   publish:
@@ -81,7 +81,7 @@ jobs:
       - name: Download Release Assets
         uses: actions/download-artifact@v4
         with:
-          name: ditdah32-release-${{ github.ref_name }}
+          name: ditdah-e1-release-${{ github.ref_name }}
           path: result/release
 
       - name: Verify Release Assets
@@ -90,9 +90,9 @@ jobs:
         run: |
           cd result/release
           test "$(find . -maxdepth 1 -name '*.tar.gz' -type f | wc -l)" -eq 3
-          test -f "ditdah32-${RELEASE_TAG}.tar.gz"
-          test -f "ditdah32-${RELEASE_TAG}-jtag.tar.gz"
-          test -f "ditdah32-${RELEASE_TAG}-fpga.tar.gz"
+          test -f "ditdah-e1-${RELEASE_TAG}.tar.gz"
+          test -f "ditdah-e1-${RELEASE_TAG}-jtag.tar.gz"
+          test -f "ditdah-e1-${RELEASE_TAG}-fpga.tar.gz"
           sha256sum --check SHA256SUMS
 
       - name: Create Draft Release
@@ -104,9 +104,9 @@ jobs:
 
             | Download | Profile | JTAG debug | Trace |
             |---|---|---|---|
-            | `ditdah32-${{ github.ref_name }}.tar.gz` | Standard | Disabled | Disabled |
-            | `ditdah32-${{ github.ref_name }}-jtag.tar.gz` | JTAG Debug | Enabled | Disabled |
-            | `ditdah32-${{ github.ref_name }}-fpga.tar.gz` | Standard plus Anlogic EG4 distributed-RAM register file | Disabled | Disabled |
+            | `ditdah-e1-${{ github.ref_name }}.tar.gz` | Standard | Disabled | Disabled |
+            | `ditdah-e1-${{ github.ref_name }}-jtag.tar.gz` | JTAG Debug | Enabled | Disabled |
+            | `ditdah-e1-${{ github.ref_name }}-fpga.tar.gz` | Standard plus Anlogic EG4 distributed-RAM register file | Disabled | Disabled |
 
             Use `SHA256SUMS` to verify all downloads. The default JTAG IDCODE is an integration placeholder.
         run: |
@@ -115,13 +115,13 @@ jobs:
             exit 1
           fi
           gh release create "$RELEASE_TAG" \
-            "result/release/ditdah32-${RELEASE_TAG}.tar.gz" \
-            "result/release/ditdah32-${RELEASE_TAG}-jtag.tar.gz" \
-            "result/release/ditdah32-${RELEASE_TAG}-fpga.tar.gz" \
+            "result/release/ditdah-e1-${RELEASE_TAG}.tar.gz" \
+            "result/release/ditdah-e1-${RELEASE_TAG}-jtag.tar.gz" \
+            "result/release/ditdah-e1-${RELEASE_TAG}-fpga.tar.gz" \
             result/release/SHA256SUMS \
             --draft \
             --verify-tag \
-            --title "DitDah32 ${RELEASE_TAG}" \
+            --title "DitDahE1 ${RELEASE_TAG}" \
             --notes "$RELEASE_NOTES"
 
       - name: Verify And Publish Release

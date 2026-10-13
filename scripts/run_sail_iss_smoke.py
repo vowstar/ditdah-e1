@@ -334,7 +334,7 @@ def run_artifact(
         }
 
     start = time.monotonic()
-    with tempfile.TemporaryDirectory(prefix=f"ditdah32-sail-{name}-") as temp_name:
+    with tempfile.TemporaryDirectory(prefix=f"ditdah-e1-sail-{name}-") as temp_name:
         work_dir = Path(temp_name)
         config = make_sail_config(sail_cmd, memory_size, ram_base, clint_base)
         config_path = work_dir / "sail_rv32ec_compatible_config.json"
@@ -400,7 +400,7 @@ def run_artifact(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run a Sail ISS smoke check for DitDah32 ISA artifacts")
+    parser = argparse.ArgumentParser(description="Run a Sail ISS smoke check for DitDahE1 ISA artifacts")
     parser.add_argument("--isa-dir", type=Path, default=REPO_ROOT / "result" / "isa")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "iss" / "sail_smoke")
     parser.add_argument("--artifact", action="append", dest="artifacts", help="artifact name without .hex; may be repeated")

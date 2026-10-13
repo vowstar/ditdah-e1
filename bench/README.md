@@ -1,16 +1,16 @@
-# DitDah32 Benchmark Bring-Up
+# DitDahE1 Benchmark Bring-Up
 
-This directory contains benchmark sources and DitDah32-specific bare-metal
+This directory contains benchmark sources and DitDahE1-specific bare-metal
 runtime code for RV32EC RTL bring-up.
 
 ## Source Layout
 
 - `coremark/upstream/` contains unmodified CoreMark files copied from the EEMBC
   CoreMark repository. Keep the upstream license file with these sources.
-- `coremark/ditdah32/` contains the DitDah32 CoreMark port layer.
+- `coremark/ditdah_e1/` contains the DitDahE1 CoreMark port layer.
 - `dhrystone/upstream/` contains unmodified Dhrystone 2.1 C files extracted
   from the Netlib `dhry-c` archive.
-- `dhrystone/ditdah32/` contains the DitDah32 Dhrystone wrapper.
+- `dhrystone/ditdah_e1/` contains the DitDahE1 Dhrystone wrapper.
 - `common/` contains the freestanding RV32EC startup, linker script, software
   integer arithmetic helpers, fixed result block, tiny heap, and libc stubs.
 
@@ -32,7 +32,7 @@ runtime.
 
 The cocotb benchmark tests load each benchmark binary into the deterministic
 AXI-Lite RAM, run until the core traps on `EBREAK`, then read the fixed
-`ditdah32_bench_result` structure from memory.
+`ditdah_e1_bench_result` structure from memory.
 
 Pass requires:
 

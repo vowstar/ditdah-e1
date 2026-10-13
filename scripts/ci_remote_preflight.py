@@ -60,7 +60,7 @@ def build_report(repo=None, workflow=None, required_scopes=None):
 
 def write_markdown(path, report):
     lines = [
-        "# DitDah32 Remote CI Preflight Audit",
+        "# DitDahE1 Remote CI Preflight Audit",
         "",
         f"Status: `{report['status']}`",
         "",
@@ -81,7 +81,7 @@ def write_markdown(path, report):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run local preflight audits required before DitDah32 remote CI closure")
+    parser = argparse.ArgumentParser(description="Run local preflight audits required before DitDahE1 remote CI closure")
     parser.add_argument("--repo", help="Target GitHub repository as owner/name. Defaults to git origin in the readiness audit.")
     parser.add_argument("--workflow", type=Path, default=REPO_ROOT / ".github" / "workflows" / "verification.yml")
     parser.add_argument("--required-scope", action="append", default=["repo"], help="Required GitHub token scope. Can be repeated.")

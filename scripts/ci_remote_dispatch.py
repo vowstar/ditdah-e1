@@ -201,7 +201,7 @@ def dispatch_profile(repo, workflow, ref, profile, expected_head_sha, wait, appe
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Dispatch DitDah32 remote GitHub Actions profiles")
+    parser = argparse.ArgumentParser(description="Dispatch DitDahE1 remote GitHub Actions profiles")
     parser.add_argument("--repo", help="GitHub repository as owner/name. Defaults to GITHUB_REPOSITORY or git origin.")
     parser.add_argument("--workflow", default="verification.yml")
     parser.add_argument("--ref", help="Branch or tag containing the workflow file. Defaults to the repository default branch.")

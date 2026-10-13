@@ -11,6 +11,7 @@
 /test/**/*.log
 /test/**/*.fst
 /test/**/*.fsdb
+/test/**/coverage.dat
 /test/**/__pycache__/
 /test/**/.pytest_cache/
 /test/**/ucli.key

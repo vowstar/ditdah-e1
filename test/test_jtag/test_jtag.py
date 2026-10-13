@@ -458,8 +458,8 @@ async def test_openocd_gdb_flow(dut):
     openocd_log = test_dir / "openocd.log"
     openocd_log.unlink(missing_ok=True)
     environment = os.environ.copy()
-    environment["DITDAH32_RBB_PORT"] = str(server.port)
-    environment["DITDAH32_GDB_PORT"] = str(gdb_port)
+    environment["DITDAH_E1_RBB_PORT"] = str(server.port)
+    environment["DITDAH_E1_GDB_PORT"] = str(gdb_port)
 
     openocd_process = None
     try:

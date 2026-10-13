@@ -287,7 +287,7 @@ def run_artifact(name, isa_dir, out_dir, base, timeout_seconds, skip_unsupported
         }
 
     start = time.monotonic()
-    with tempfile.TemporaryDirectory(prefix=f"ditdah32-{name}-") as temp_name:
+    with tempfile.TemporaryDirectory(prefix=f"ditdah-e1-{name}-") as temp_name:
         work_dir = Path(temp_name)
         elf_path = build_elf(name, words, work_dir, base, logs_dir)
         timeout_cmd = shutil.which("timeout")
@@ -339,7 +339,7 @@ def run_artifact(name, isa_dir, out_dir, base, timeout_seconds, skip_unsupported
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run a small Spike ISS smoke check for DitDah32 ISA artifacts")
+    parser = argparse.ArgumentParser(description="Run a small Spike ISS smoke check for DitDahE1 ISA artifacts")
     parser.add_argument("--isa-dir", type=Path, default=REPO_ROOT / "result" / "isa")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "iss" / "spike_smoke")
     parser.add_argument("--artifact", action="append", dest="artifacts", help="artifact name without .hex; may be repeated")

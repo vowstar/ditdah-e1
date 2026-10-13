@@ -184,7 +184,7 @@ def classify_run(run, jobs, artifacts):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Collect remote GitHub Actions evidence for DitDah32 verification")
+    parser = argparse.ArgumentParser(description="Collect remote GitHub Actions evidence for DitDahE1 verification")
     parser.add_argument("--repo", help="GitHub repository as owner/name. Defaults to GITHUB_REPOSITORY or git origin.")
     parser.add_argument("--workflow", default="verification.yml")
     parser.add_argument("--head-sha", help="Expected commit SHA for closing remote evidence. Defaults to GITHUB_SHA or local git HEAD.")

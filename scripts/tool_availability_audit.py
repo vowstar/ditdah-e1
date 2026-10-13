@@ -14,7 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 COMMAND_CHECKS = [
     {
-        "name": "build-ditdah32",
+        "name": "build-ditdah-e1",
         "required_for": ["rtl_build"],
         "version_args": [],
     },
@@ -227,7 +227,7 @@ def build_capabilities(commands, nix_attrs):
     return {
         "rtl_build_toolchain": all(
             command_available(commands, name)
-            for name in ["build-ditdah32", "scala-cli", "firtool"]
+            for name in ["build-ditdah-e1", "scala-cli", "firtool"]
         ),
         "riscv_embedded_toolchain": all(
             command_available(commands, name)
@@ -267,7 +267,7 @@ def build_capabilities(commands, nix_attrs):
 
 def write_markdown(path, report):
     lines = [
-        "# DitDah32 Tool Availability Audit",
+        "# DitDahE1 Tool Availability Audit",
         "",
         f"Status: `{report['status']}`",
         f"Current local toolchain: `{report['current_local_toolchain_status']}`",
@@ -309,7 +309,7 @@ def write_markdown(path, report):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Audit DitDah32 verification tool availability")
+    parser = argparse.ArgumentParser(description="Audit DitDahE1 verification tool availability")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "verification")
     args = parser.parse_args()
 

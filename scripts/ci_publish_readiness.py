@@ -390,7 +390,7 @@ def build_report(repo=None):
 
 def write_markdown(path, report):
     lines = [
-        "# DitDah32 CI Publish Readiness Audit",
+        "# DitDahE1 CI Publish Readiness Audit",
         "",
         f"Status: `{report['status']}`",
         "",
@@ -411,7 +411,7 @@ def write_markdown(path, report):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Audit local readiness for publishing DitDah32 remote CI evidence")
+    parser = argparse.ArgumentParser(description="Audit local readiness for publishing DitDahE1 remote CI evidence")
     parser.add_argument("--repo", help="Target GitHub repository as owner/name when no git origin is available.")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "verification")
     args = parser.parse_args()

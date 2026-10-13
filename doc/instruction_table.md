@@ -1,4 +1,4 @@
-# DitDah32 Instruction Table
+# DitDahE1 Instruction Table
 
 ## RV32E 32-Bit Instructions
 
@@ -70,9 +70,9 @@ are naturally valid for RV32E. Other compressed forms that directly encode a
 - `C.JR` with `rs1 = x0` is illegal.
 - `C.ADDI16SP` with zero immediate is illegal.
 - `C.LUI` with zero immediate is illegal.
-- RV64C-only encodings are illegal or unsupported for DitDah32.
+- RV64C-only encodings are illegal or unsupported for DitDahE1.
 - Floating-point compressed load/store encodings are unsupported because
-  DitDah32 has no F or D extension.
+  DitDahE1 has no F or D extension.
 - HINT encodings have no architectural effect except PC advance when their
   encoded registers are legal for RV32E.
 

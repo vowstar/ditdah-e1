@@ -748,7 +748,7 @@ def parse_hex_words(path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run the DitDah32 RV32EC reference model")
+    parser = argparse.ArgumentParser(description="Run the DitDahE1 RV32EC reference model")
     parser.add_argument("hex_words", help="text file with 32-bit hex words and optional @addr markers")
     parser.add_argument("--pc", type=lambda text: int(text, 0), default=0)
     parser.add_argument("--max-steps", type=int, default=100)

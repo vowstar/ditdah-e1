@@ -354,7 +354,7 @@ def write_trace(path, trace):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run DitDah32 directed RV32EC ISA regressions")
+    parser = argparse.ArgumentParser(description="Run DitDahE1 directed RV32EC ISA regressions")
     parser.add_argument("--out-dir", type=Path, default=None, help="optional directory for hex and trace artifacts")
     parser.add_argument("--random-count", type=int, default=8)
     parser.add_argument("--random-steps", type=int, default=64)

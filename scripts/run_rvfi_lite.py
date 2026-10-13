@@ -24,20 +24,20 @@ def resolve_slang_so():
 
 
 # The trace surface lives in the layer("DV") bind collateral. read_slang reads
-# the core and resolves the probe XMRs through ditdah32_trace_top; the adapter
+# the core and resolves the probe XMRs through ditdah_e1_trace_top; the adapter
 # (with anyseq inputs) is then read with yosys read_verilog -formal.
-TRACE_TOP = "formal/riscv_formal/ditdah32/ditdah32_trace_top.sv"
+TRACE_TOP = "formal/riscv_formal/ditdah_e1/ditdah_e1_trace_top.sv"
 
 
 def read_slang_dut_cmd():
     slang_so = resolve_slang_so()
     return (
         f"plugin -i {slang_so}; "
-        f"read_slang -Iresult {TRACE_TOP} result/DitDah32.sv result/DitDah32Gpr.sv "
-        f"result/DitDah32_DV.sv result/layers-DitDah32-DV.sv --top ditdah32_trace_top; "
+        f"read_slang -Iresult {TRACE_TOP} result/DitDahE1.sv result/DitDahE1Gpr.sv "
+        f"result/DitDahE1_DV.sv result/layers-DitDahE1-DV.sv --top ditdah_e1_trace_top; "
     )
 LIMITATIONS = [
-    "RVFI-lite derives retirement from DitDah32 trace pins, not a complete riscv-formal RVFI implementation.",
+    "RVFI-lite derives retirement from DitDahE1 trace pins, not a complete riscv-formal RVFI implementation.",
     "rvfi_pc_wdata is driven by trace_next_pc and the external riscv-formal subset checks PC consistency separately.",
     "rvfi_rs1/rs2 fields are driven by retired source-operand trace pins and are checked by the external riscv-formal reg group.",
     "rvfi_mem_* fields are driven by retired memory trace pins; non-faulting RVFI_BUS checks run in make verify-rvfi.",
@@ -66,7 +66,7 @@ def run(cmd, log_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run DitDah32 RVFI-lite adapter formal checks")
+    parser = argparse.ArgumentParser(description="Run DitDahE1 RVFI-lite adapter formal checks")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "formal" / "rvfi_lite")
     parser.add_argument("--depth", type=int, default=24)
     args = parser.parse_args()
@@ -76,8 +76,8 @@ def main():
         out_dir = REPO_ROOT / out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    smt_path = out_dir / "ditdah32_rvfi_lite.smt2"
-    vcd_path = out_dir / "ditdah32_rvfi_lite.vcd"
+    smt_path = out_dir / "ditdah_e1_rvfi_lite.smt2"
+    vcd_path = out_dir / "ditdah_e1_rvfi_lite.vcd"
     yosys_log = out_dir / "yosys.log"
     smtbmc_log = out_dir / "smtbmc.log"
 
@@ -90,8 +90,8 @@ def main():
                 "-p",
                 (
                     read_slang_dut_cmd()
-                    + "read_verilog -formal -sv formal/ditdah32_rvfi_lite.sv; "
-                    "prep -top DitDah32RvfiLite; "
+                    + "read_verilog -formal -sv formal/ditdah_e1_rvfi_lite.sv; "
+                    "prep -top DitDahE1RvfiLite; "
                     # yosys lowers SV assert()/assume() to edge-triggered
                     # $check cells; write_smt2 emits only $assert/$assume, so
                     # without this the SMT2 assertion function is constant true.

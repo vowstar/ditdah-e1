@@ -13,7 +13,7 @@ import ci_publish_readiness  # noqa: E402
 
 
 WORKFLOW_YAML = """\
-name: DitDah32 Verification
+name: DitDahE1 Verification
 
 on:
   push:
@@ -42,7 +42,7 @@ jobs:
       - run: make verify-ci-smoke
       - uses: actions/upload-artifact@v6
         with:
-          name: ditdah32-smoke-${{ github.run_id }}
+          name: ditdah-e1-smoke-${{ github.run_id }}
           path: |
             result/verification/**
   full:
@@ -51,7 +51,7 @@ jobs:
       - run: nix develop --option sandbox false -c sh -c 'make verify && make audit-gaps'
       - uses: actions/upload-artifact@v6
         with:
-          name: ditdah32-full-${{ github.run_id }}
+          name: ditdah-e1-full-${{ github.run_id }}
           path: |
             result/verification/**
             result/rtl_trace/**
@@ -73,7 +73,7 @@ jobs:
       - run: make audit-ci-remote && make audit-gaps
       - uses: actions/upload-artifact@v6
         with:
-          name: ditdah32-ci-evidence-${{ github.run_id }}
+          name: ditdah-e1-ci-evidence-${{ github.run_id }}
           path: |
             result/verification/**
 """

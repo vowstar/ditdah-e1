@@ -18,8 +18,8 @@ _start:
     j 1b
 
 2:
-    call ditdah32_main
-    la a1, ditdah32_bench_result
+    call ditdah_e1_main
+    la a1, ditdah_e1_bench_result
     lw a2, 0(a1)
     li a3, 0xdd32beef
     beq a2, a3, 3f

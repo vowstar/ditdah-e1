@@ -50,8 +50,8 @@ JTAG_PORTS = [
 ]
 
 JTAG_MODULES = [
-    "DitDah32JtagDtm",
-    "DitDah32DebugModule",
+    "DitDahE1JtagDtm",
+    "DitDahE1DebugModule",
 ]
 
 
@@ -90,7 +90,7 @@ def build_config(name, trace_enabled, jtag_enabled, build_root, logs_dir):
     env = os.environ.copy()
     env["OUTPUT_DIR"] = str(output_dir)
     command = [
-        "build-ditdah32",
+        "build-ditdah-e1",
         "--trace" if trace_enabled else "--no-trace",
         "--jtag" if jtag_enabled else "--no-jtag",
     ]
@@ -99,21 +99,21 @@ def build_config(name, trace_enabled, jtag_enabled, build_root, logs_dir):
     step["trace_enabled"] = trace_enabled
     step["jtag_enabled"] = jtag_enabled
     step["output_dir"] = rel(output_dir)
-    step["rtl"] = rel(output_dir / "DitDah32.sv")
-    step["config"] = rel(output_dir / "ditdah32_config.json")
+    step["rtl"] = rel(output_dir / "DitDahE1.sv")
+    step["config"] = rel(output_dir / "ditdah_e1_config.json")
     return step
 
 
 def extract_module_header(verilog_text):
-    match = re.search(r"\bmodule\s+DitDah32\s*\((.*?)\n\);", verilog_text, flags=re.DOTALL)
+    match = re.search(r"\bmodule\s+DitDahE1\s*\((.*?)\n\);", verilog_text, flags=re.DOTALL)
     if not match:
-        raise ValueError("DitDah32 module header was not found.")
+        raise ValueError("DitDahE1 module header was not found.")
     return match.group(1)
 
 
 def check_module_text(verilog_text, expect_trace, expect_jtag=False):
     # The trace surface now lowers to the layer("DV") bind collateral, never
-    # into the DitDah32 main module. The main module must therefore be free of
+    # into the DitDahE1 main module. The main module must therefore be free of
     # trace ports and trace state in BOTH the production and verification
     # builds; expect_trace selects whether the DV collateral is expected to
     # exist (checked separately by audit_artifact).
@@ -140,9 +140,9 @@ def check_module_text(verilog_text, expect_trace, expect_jtag=False):
 
     missing = []
     if present_trace_ports:
-        missing.append("DitDah32 main module exposes trace ports: " + ", ".join(present_trace_ports))
+        missing.append("DitDahE1 main module exposes trace ports: " + ", ".join(present_trace_ports))
     if trace_tokens:
-        missing.append("DitDah32 main module contains trace state or wiring: " + ", ".join(trace_tokens))
+        missing.append("DitDahE1 main module contains trace state or wiring: " + ", ".join(trace_tokens))
     if rvfi_ports:
         missing.append("Core top-level exposes direct RVFI ports: " + ", ".join(rvfi_ports))
     if expect_jtag:
@@ -173,9 +173,9 @@ def check_module_text(verilog_text, expect_trace, expect_jtag=False):
 def check_dv_collateral(output_dir, expect_trace):
     # Verification builds emit the layer("DV") bind collateral carrying the
     # trace probes; production builds must not ship it.
-    dv_module = output_dir / "DitDah32_DV.sv"
-    ref_macros = output_dir / "ref_DitDah32.sv"
-    bind_file = output_dir / "layers-DitDah32-DV.sv"
+    dv_module = output_dir / "DitDahE1_DV.sv"
+    ref_macros = output_dir / "ref_DitDahE1.sv"
+    bind_file = output_dir / "layers-DitDahE1-DV.sv"
     present = dv_module.exists()
     missing = []
     if expect_trace:
@@ -279,7 +279,7 @@ def audit_artifact(name, rtl_path, config_path, expect_trace, expect_jtag=False)
 
 def write_markdown(report, path):
     lines = [
-        "# DitDah32 Trace and JTAG Configuration Audit",
+        "# DitDahE1 Trace and JTAG Configuration Audit",
         "",
         f"Status: `{report['status']}`",
         "",
@@ -321,29 +321,29 @@ def main():
     artifacts = [
         audit_artifact(
             "production",
-            build_root / "production" / "DitDah32.sv",
-            build_root / "production" / "ditdah32_config.json",
+            build_root / "production" / "DitDahE1.sv",
+            build_root / "production" / "ditdah_e1_config.json",
             False,
             False,
         ),
         audit_artifact(
             "trace_only",
-            build_root / "trace_only" / "DitDah32.sv",
-            build_root / "trace_only" / "ditdah32_config.json",
+            build_root / "trace_only" / "DitDahE1.sv",
+            build_root / "trace_only" / "ditdah_e1_config.json",
             True,
             False,
         ),
         audit_artifact(
             "jtag_only",
-            build_root / "jtag_only" / "DitDah32.sv",
-            build_root / "jtag_only" / "ditdah32_config.json",
+            build_root / "jtag_only" / "DitDahE1.sv",
+            build_root / "jtag_only" / "ditdah_e1_config.json",
             False,
             True,
         ),
         audit_artifact(
             "trace_jtag",
-            build_root / "trace_jtag" / "DitDah32.sv",
-            build_root / "trace_jtag" / "ditdah32_config.json",
+            build_root / "trace_jtag" / "DitDahE1.sv",
+            build_root / "trace_jtag" / "ditdah_e1_config.json",
             True,
             True,
         ),
@@ -364,11 +364,11 @@ def main():
         "artifacts": artifacts,
         "missing": missing,
         "policy": {
-            "production": "The DitDah32 main module must not expose trace_* or rvfi_* top-level ports in any build.",
-            "production_internal_trace": "The DitDah32 main module must not contain trace state or trace wiring; the trace surface lives in the layer(\"DV\") bind collateral.",
+            "production": "The DitDahE1 main module must not expose trace_* or rvfi_* top-level ports in any build.",
+            "production_internal_trace": "The DitDahE1 main module must not contain trace state or trace wiring; the trace surface lives in the layer(\"DV\") bind collateral.",
             "production_collateral": "The production (--no-trace) build must not ship the DV trace collateral.",
-            "verification": "The verification (--trace) build emits the DV bind collateral (DitDah32_DV.sv, ref_DitDah32.sv) carrying the trace probes consumed by cocotb and the riscv-formal flow.",
-            "rvfi": "DitDah32 does not expose direct rvfi_* core ports; RVFI is provided by the formal wrapper over the DV probe XMRs.",
+            "verification": "The verification (--trace) build emits the DV bind collateral (DitDahE1_DV.sv, ref_DitDahE1.sv) carrying the trace probes consumed by cocotb and the riscv-formal flow.",
+            "rvfi": "DitDahE1 does not expose direct rvfi_* core ports; RVFI is provided by the formal wrapper over the DV probe XMRs.",
             "jtag": "JTAG ports and debug modules exist only when enableJtag is true.",
         },
     }

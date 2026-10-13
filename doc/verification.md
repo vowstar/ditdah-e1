@@ -1,6 +1,6 @@
-# DitDah32 Verification Plan
+# DitDahE1 Verification Plan
 
-DitDah32 verification uses the standard RV32 methodology: directed cocotb RTL
+DitDahE1 verification uses the standard RV32 methodology: directed cocotb RTL
 tests, RTL/ISS comparison against Spike and Sail, riscv-formal RVFI proofs,
 RISCV-DV programs, a Sail compliance signature gate, and Verilator coverage.
 Gaps the campaign does not close are tracked in `doc/open_gaps.md`. Optional
@@ -30,7 +30,7 @@ make audit-jtag-ppa        # generic synthesis baseline and optional cost
 make package-release RELEASE_TAG=vX.Y.Z  # package trace-free RTL assets
 ```
 
-`build-ditdah32` is the default production build and omits architectural
+`build-ditdah-e1` is the default production build and omits architectural
 `trace_*` and direct `rvfi_*` top-level ports. Targets that need trace pins
 depend on `build-trace`. JTAG ports and logic exist only with `enableJtag=true`.
 
@@ -97,8 +97,8 @@ long-duration stability.
 
 ## Local SVA
 
-`ditdah32/src/DitDah32Sva.scala` states 38 assertions and 19 covers inside
-`layer("DV")`, so they reach `result/sva/DitDah32_DV.sv` as SVA and the
+`ditdah_e1/src/DitDahE1Sva.scala` states 38 assertions and 19 covers inside
+`layer("DV")`, so they reach `result/sva/DitDahE1_DV.sv` as SVA and the
 production module stays assertion-free. They cover AXI stability and
 single-outstanding behaviour, bus faults, sleep quiescence, RV32E register
 range, trap entry and MRET CSR transitions, interrupt cause priority, WARL
@@ -115,5 +115,5 @@ set, so its reach over the design is unmeasured and no figure is published.
 
 ## RVFI Wrapper
 
-`formal/riscv_formal/ditdah32/wrapper.sv` adapts the DV trace to RVFI and
+`formal/riscv_formal/ditdah_e1/wrapper.sv` adapts the DV trace to RVFI and
 carries independently gated WFI, trap, interrupt, CSR access, and WARL proofs.

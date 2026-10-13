@@ -30,9 +30,9 @@ def rel(path):
 
 
 def parse_logic_depth(log_text):
-    match = re.search(r"Longest topological path in DitDah32 \(length=(\d+)\)", log_text)
+    match = re.search(r"Longest topological path in DitDahE1 \(length=(\d+)\)", log_text)
     if not match:
-        raise ValueError("DitDah32 logic depth was not reported")
+        raise ValueError("DitDahE1 logic depth was not reported")
     return int(match.group(1))
 
 
@@ -57,7 +57,7 @@ def synthesize(name, sources, out_dir):
     quoted_sources = " ".join(shlex.quote(source) for source in sources)
     script = (
         f"read_verilog -sv {quoted_sources}; "
-        "synth -flatten -top DitDah32; "
+        "synth -flatten -top DitDahE1; "
         f"tee -o {shlex.quote(rel(stats_path))} stat -json; "
         "ltp -noff"
     )
@@ -101,7 +101,7 @@ def write_markdown(report, path):
     production = report["production"].get("metrics", {})
     jtag = report["jtag"].get("metrics", {})
     lines = [
-        "# DitDah32 JTAG PPA Proxy Audit",
+        "# DitDahE1 JTAG PPA Proxy Audit",
         "",
         f"Status: `{report['status']}`",
         "",
@@ -129,16 +129,16 @@ def main():
 
     production = synthesize(
         "production",
-        [rel(build_root / "production" / "DitDah32.sv"), rel(build_root / "production" / "DitDah32Gpr.sv")],
+        [rel(build_root / "production" / "DitDahE1.sv"), rel(build_root / "production" / "DitDahE1Gpr.sv")],
         out_dir,
     )
     jtag = synthesize(
         "jtag",
         [
-            rel(build_root / "jtag_only" / "DitDah32.sv"),
-            rel(build_root / "jtag_only" / "DitDah32Gpr.sv"),
-            rel(build_root / "jtag_only" / "DitDah32DebugModule.sv"),
-            rel(build_root / "jtag_only" / "DitDah32JtagDtm.sv"),
+            rel(build_root / "jtag_only" / "DitDahE1.sv"),
+            rel(build_root / "jtag_only" / "DitDahE1Gpr.sv"),
+            rel(build_root / "jtag_only" / "DitDahE1DebugModule.sv"),
+            rel(build_root / "jtag_only" / "DitDahE1JtagDtm.sv"),
         ],
         out_dir,
     )

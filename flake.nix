@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Huang Rui <vowstar@gmail.com>
 # SPDX-License-Identifier: MIT
 {
-  description = "DitDah32 tiny two-stage RV32EC core using zaozi EDSL";
+  description = "DitDahE1 tiny two-stage RV32EC core using zaozi EDSL";
 
   inputs = {
     zaozi.url = "github:xinpian-tech/zaozi";
@@ -22,7 +22,7 @@
       let
         pkgs = zaozi.legacyPackages.${system};
 
-        ditdah32Config = {
+        ditdah_e1Config = {
           resetVector = 0;
           enableTrace = false;
           enableSva = false;
@@ -32,7 +32,7 @@
 
         # yosys-slang frontend, statically linked against vendored slang/fmt.
         # Provides read_slang so the formal flow can resolve CIRCT layer-bound
-        # DV probe XMRs in the generated DitDah32.sv.
+        # DV probe XMRs in the generated DitDahE1.sv.
         yosys-slang = pkgs.stdenv.mkDerivation {
           pname = "yosys-slang";
           version = "3251530";
@@ -160,14 +160,14 @@
             tabulate
           ]);
 
-        buildScript = pkgs.writeShellScriptBin "build-ditdah32" ''
+        buildScript = pkgs.writeShellScriptBin "build-ditdah-e1" ''
           set -euo pipefail
 
           JAVA_LIBRARY_PATH="${javaLibraryPath}"
           OUTPUT_DIR="''${OUTPUT_DIR:-$PWD/result}"
-          ENABLE_TRACE="''${DITDAH32_ENABLE_TRACE:-${if ditdah32Config.enableTrace then "true" else "false"}}"
-          ENABLE_JTAG="''${DITDAH32_ENABLE_JTAG:-${if ditdah32Config.enableJtag then "true" else "false"}}"
-          ENABLE_SVA="''${DITDAH32_ENABLE_SVA:-${if ditdah32Config.enableSva then "true" else "false"}}"
+          ENABLE_TRACE="''${DITDAH_E1_ENABLE_TRACE:-${if ditdah_e1Config.enableTrace then "true" else "false"}}"
+          ENABLE_JTAG="''${DITDAH_E1_ENABLE_JTAG:-${if ditdah_e1Config.enableJtag then "true" else "false"}}"
+          ENABLE_SVA="''${DITDAH_E1_ENABLE_SVA:-${if ditdah_e1Config.enableSva then "true" else "false"}}"
 
           while [ "$#" -gt 0 ]; do
             case "$1" in
@@ -191,18 +191,18 @@
                 ;;
               --help)
                 cat <<'EOF'
-Usage: build-ditdah32 [--trace|--no-trace] [--jtag|--no-jtag]
+Usage: build-ditdah-e1 [--trace|--no-trace] [--jtag|--no-jtag]
 
-Generate DitDah32 Verilog into OUTPUT_DIR, defaulting to ./result.
+Generate DitDahE1 Verilog into OUTPUT_DIR, defaulting to ./result.
 The default production build omits architectural trace ports. Use --trace
-or DITDAH32_ENABLE_TRACE=1 for RTL simulation, trace comparison, and RVFI.
+or DITDAH_E1_ENABLE_TRACE=1 for RTL simulation, trace comparison, and RVFI.
 The default build omits JTAG ports and debug logic. Use --jtag or
-DITDAH32_ENABLE_JTAG=1 to generate the optional debug configuration.
+DITDAH_E1_ENABLE_JTAG=1 to generate the optional debug configuration.
 EOF
                 exit 0
                 ;;
               *)
-                echo "unknown build-ditdah32 option: $1" >&2
+                echo "unknown build-ditdah-e1 option: $1" >&2
                 exit 2
                 ;;
             esac
@@ -217,7 +217,7 @@ EOF
               ENABLE_TRACE=false
               ;;
             *)
-              echo "invalid DITDAH32_ENABLE_TRACE value: $ENABLE_TRACE" >&2
+              echo "invalid DITDAH_E1_ENABLE_TRACE value: $ENABLE_TRACE" >&2
               exit 2
               ;;
           esac
@@ -230,7 +230,7 @@ EOF
               ENABLE_JTAG=false
               ;;
             *)
-              echo "invalid DITDAH32_ENABLE_JTAG value: $ENABLE_JTAG" >&2
+              echo "invalid DITDAH_E1_ENABLE_JTAG value: $ENABLE_JTAG" >&2
               exit 2
               ;;
           esac
@@ -238,61 +238,61 @@ EOF
           mkdir -p "$OUTPUT_DIR"
           OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
 
-          echo "=== Building DitDah32 with zaozi ==="
+          echo "=== Building DitDahE1 with zaozi ==="
           echo "OUTPUT_DIR: $OUTPUT_DIR"
           echo "ENABLE_TRACE: $ENABLE_TRACE"
           echo "ENABLE_JTAG: $ENABLE_JTAG"
 
-          rm -f DitDah32*.mlirbc
+          rm -f DitDahE1*.mlirbc
 
           scala-cli run \
             ${commonScalaArgs} \
-            --main-class com.vowstar.ditdah32.DitDah32Module \
-            ditdah32/src \
-            -- config "$OUTPUT_DIR/ditdah32_config.json" \
-            --resetVector ${toString ditdah32Config.resetVector} \
+            --main-class com.vowstar.ditdah.e1.DitDahE1Module \
+            ditdah_e1/src \
+            -- config "$OUTPUT_DIR/ditdah_e1_config.json" \
+            --resetVector ${toString ditdah_e1Config.resetVector} \
             --enableTrace "$ENABLE_TRACE" \
             --enableJtag "$ENABLE_JTAG" \
             --enableSva "$ENABLE_SVA" \
-            --jtagIdcode ${toString ditdah32Config.jtagIdcode}
+            --jtagIdcode ${toString ditdah_e1Config.jtagIdcode}
 
           scala-cli run \
             ${commonScalaArgs} \
-            --main-class com.vowstar.ditdah32.DitDah32Module \
-            ditdah32/src \
-            -- design "$OUTPUT_DIR/ditdah32_config.json"
+            --main-class com.vowstar.ditdah.e1.DitDahE1Module \
+            ditdah_e1/src \
+            -- design "$OUTPUT_DIR/ditdah_e1_config.json"
 
-          MLIRBC_FILE=$(ls DitDah32.mlirbc 2>/dev/null | head -1)
+          MLIRBC_FILE=$(ls DitDahE1.mlirbc 2>/dev/null | head -1)
 
           if [ -z "$MLIRBC_FILE" ]; then
-            echo "Error: no DitDah32 .mlirbc file generated"
+            echo "Error: no DitDahE1 .mlirbc file generated"
             exit 1
           fi
 
-          ${pkgs.circt-install}/bin/firld DitDah32*.mlirbc \
-            --base-circuit DitDah32 \
+          ${pkgs.circt-install}/bin/firld DitDahE1*.mlirbc \
+            --base-circuit DitDahE1 \
             --no-mangle \
             --emit-bytecode \
-            -o DitDah32-linked.mlirbc
+            -o DitDahE1-linked.mlirbc
 
-          ${pkgs.circt-install}/bin/firtool DitDah32-linked.mlirbc \
+          ${pkgs.circt-install}/bin/firtool DitDahE1-linked.mlirbc \
             ${firtoolArgs} \
             --hgldd-output-dir="$OUTPUT_DIR" \
             -o "$OUTPUT_DIR"
 
-          rm -f DitDah32*.mlirbc
+          rm -f DitDahE1*.mlirbc
 
           # The DV trace surface always lowers to separate layer("DV") bind
-          # collateral, never into the DitDah32 main module. The production
+          # collateral, never into the DitDahE1 main module. The production
           # (--no-trace) deliverable is the lone trace-free core; verification
           # (--trace) keeps the bind collateral for cocotb and the formal flow.
           if [ "$ENABLE_TRACE" != "true" ]; then
-            rm -f "$OUTPUT_DIR"/DitDah32_DV.sv \
-                  "$OUTPUT_DIR"/layers-DitDah32-DV.sv \
-                  "$OUTPUT_DIR"/ref_DitDah32.sv \
-                  "$OUTPUT_DIR"/DitDah32_DV.dd
+            rm -f "$OUTPUT_DIR"/DitDahE1_DV.sv \
+                  "$OUTPUT_DIR"/layers-DitDahE1-DV.sv \
+                  "$OUTPUT_DIR"/ref_DitDahE1.sv \
+                  "$OUTPUT_DIR"/DitDahE1_DV.dd
             if [ -f "$OUTPUT_DIR"/filelist.f ]; then
-              ${pkgs.gnugrep}/bin/grep -v -e DitDah32_DV.sv -e layers-DitDah32-DV.sv \
+              ${pkgs.gnugrep}/bin/grep -v -e DitDahE1_DV.sv -e layers-DitDahE1-DV.sv \
                 "$OUTPUT_DIR"/filelist.f > "$OUTPUT_DIR"/filelist.f.tmp \
                 && mv "$OUTPUT_DIR"/filelist.f.tmp "$OUTPUT_DIR"/filelist.f || true
             fi
@@ -368,10 +368,10 @@ EOF
         rtlShellHook = ''
           export PATH="${pythonEnv}/bin:${pkgs.pkgsCross.riscv32-embedded.stdenv.cc}/bin:${pkgs.pkgsCross.riscv32-embedded.buildPackages.binutils}/bin:$PATH"
           echo "========================================"
-          echo "DitDah32 Zaozi Development Environment"
+          echo "DitDahE1 Zaozi Development Environment"
           echo "========================================"
-          echo "Build Verilog:  build-ditdah32"
-          echo "Run tests:      cd test/test_ditdah32 && make"
+          echo "Build Verilog:  build-ditdah-e1"
+          echo "Run tests:      cd test/test_ditdah_e1 && make"
           echo "========================================"
         '';
 
@@ -444,7 +444,7 @@ EOF
         ];
 
         scoreScript = pkgs.writeShellApplication {
-          name = "score-ditdah32";
+          name = "score-ditdah-e1";
           runtimeInputs = [
             buildScript
             pkgs.scala-cli
@@ -459,20 +459,20 @@ EOF
             pythonEnv
           ];
           text = ''
-            build-ditdah32 --no-trace
+            build-ditdah-e1 --no-trace
             python3 scripts/run_bench_sim.py "$@"
           '';
         };
 
         mkRtlPackage = { name, enableJtag }:
           let
-            releaseConfig = ditdah32Config // {
+            releaseConfig = ditdah_e1Config // {
               enableTrace = false;
               enableSva = false;
               inherit enableJtag;
             };
           in
-          pkgs.runCommand "ditdah32-verilog-${name}" {
+          pkgs.runCommand "ditdah-e1-verilog-${name}" {
             nativeBuildInputs = [
               pkgs.scala-cli
               pkgs.circt-install
@@ -482,22 +482,22 @@ EOF
             JAVA_TOOL_OPTIONS = "--enable-preview";
           } ''
             mkdir -p $out
-            cp -R ${./ditdah32/src} source
+            cp -R ${./ditdah_e1/src} source
             chmod -R u+w source
             cd source
 
             JAVA_LIBRARY_PATH="${javaLibraryPath}"
             export COURSIER_CACHE="$NIX_BUILD_TOP/coursier-cache"
 
-            rm -f DitDah32*.mlirbc
+            rm -f DitDahE1*.mlirbc
 
             scala-cli run \
               --power \
               --offline \
               ${commonScalaArgs} \
-              --main-class com.vowstar.ditdah32.DitDah32Module \
+              --main-class com.vowstar.ditdah.e1.DitDahE1Module \
               . \
-              -- config "$out/ditdah32_config.json" \
+              -- config "$out/ditdah_e1_config.json" \
               --resetVector ${toString releaseConfig.resetVector} \
               --enableTrace false \
               --enableSva false \
@@ -508,30 +508,30 @@ EOF
               --power \
               --offline \
               ${commonScalaArgs} \
-              --main-class com.vowstar.ditdah32.DitDah32Module \
+              --main-class com.vowstar.ditdah.e1.DitDahE1Module \
               . \
-              -- design "$out/ditdah32_config.json"
+              -- design "$out/ditdah_e1_config.json"
 
-            ${pkgs.circt-install}/bin/firld DitDah32*.mlirbc \
-              --base-circuit DitDah32 \
+            ${pkgs.circt-install}/bin/firld DitDahE1*.mlirbc \
+              --base-circuit DitDahE1 \
               --no-mangle \
               --emit-bytecode \
-              -o DitDah32-linked.mlirbc
+              -o DitDahE1-linked.mlirbc
 
-            ${pkgs.circt-install}/bin/firtool DitDah32-linked.mlirbc \
+            ${pkgs.circt-install}/bin/firtool DitDahE1-linked.mlirbc \
               ${releaseFirtoolArgs} \
               --hgldd-output-dir="$out" \
               -o "$out"
 
-            rm -f "$out"/DitDah32_DV.sv \
+            rm -f "$out"/DitDahE1_DV.sv \
                   "$out"/layers-*-DV.sv \
-                  "$out"/ref_DitDah32.sv \
-                  "$out"/DitDah32_DV.dd
-            ${pkgs.gnugrep}/bin/grep -v -e DitDah32_DV.sv -e layers-DitDah32-DV.sv \
+                  "$out"/ref_DitDahE1.sv \
+                  "$out"/DitDahE1_DV.dd
+            ${pkgs.gnugrep}/bin/grep -v -e DitDahE1_DV.sv -e layers-DitDahE1-DV.sv \
               "$out"/filelist.f > "$out"/filelist.f.tmp
             mv "$out"/filelist.f.tmp "$out"/filelist.f
             printf '%s\n' ${pkgs.lib.escapeShellArg (builtins.toJSON releaseConfig)} \
-              > "$out/ditdah32_config.json"
+              > "$out/ditdah_e1_config.json"
           '';
 
         rtlStandard = mkRtlPackage {
@@ -542,7 +542,7 @@ EOF
           name = "jtag";
           enableJtag = true;
         };
-        releaseInputs = pkgs.linkFarm "ditdah32-release-inputs" [
+        releaseInputs = pkgs.linkFarm "ditdah-e1-release-inputs" [
           { name = "standard"; path = rtlStandard; }
           { name = "jtag"; path = rtlJtag; }
         ];
@@ -557,17 +557,17 @@ EOF
 
         apps.default = {
           type = "app";
-          program = "${buildScript}/bin/build-ditdah32";
+          program = "${buildScript}/bin/build-ditdah-e1";
         };
 
         apps.build = {
           type = "app";
-          program = "${buildScript}/bin/build-ditdah32";
+          program = "${buildScript}/bin/build-ditdah-e1";
         };
 
         apps.score = {
           type = "app";
-          program = "${scoreScript}/bin/score-ditdah32";
+          program = "${scoreScript}/bin/score-ditdah-e1";
         };
 
         devShells = {
