@@ -17,6 +17,7 @@ module ditdah_e1_bench_tb;
   string        image_hex;
   int unsigned  timing_addr;
   int unsigned  result_addr;
+  bit           pipelined_reads;
   int unsigned  read_latency;
   int unsigned  write_latency;
   longint unsigned max_cycles;
@@ -94,56 +95,40 @@ module ditdah_e1_bench_tb;
 
   always @(posedge clock) if (!reset) cycle <= cycle + 1;
 
-  // ---- read channel: registered-output single-outstanding slave ----
   localparam int R_IDLE = 0, R_WAIT = 1, R_RESP = 2;
   int unsigned rstate = R_IDLE;
   int unsigned rcnt = 0;
   logic [31:0] raddr_q = 0;
 
+  assign axi_ar_ready = !reset && (rstate == R_IDLE ||
+      (pipelined_reads && rstate == R_RESP && axi_r_ready));
+
   always @(posedge clock) begin
     if (reset) begin
-      rstate      <= R_IDLE;
-      axi_ar_ready <= 0;
-      axi_r_valid  <= 0;
-      axi_r_bits_data   <= 0;
-      axi_r_bits_resp   <= 0;
-    end else begin
-      case (rstate)
-        R_IDLE: begin
-          axi_r_valid  <= 0;
-          axi_ar_ready <= 1;
-          if (axi_ar_valid && axi_ar_ready) begin
-            raddr_q     <= axi_ar_bits_addr;
-            axi_ar_ready <= 0;
-            if (read_latency == 0) begin
-              axi_r_bits_data  <= mem[axi_ar_bits_addr[17:2]];
-              axi_r_bits_resp  <= 0;
-              axi_r_valid <= 1;
-              rstate     <= R_RESP;
-            end else begin
-              rcnt   <= read_latency;
-              rstate <= R_WAIT;
-            end
-          end
-        end
-        R_WAIT: begin
-          if (rcnt <= 1) begin
-            axi_r_bits_data  <= mem[raddr_q[17:2]];
-            axi_r_bits_resp  <= 0;
-            axi_r_valid <= 1;
-            rstate     <= R_RESP;
-          end else begin
-            rcnt <= rcnt - 1;
-          end
-        end
-        R_RESP: begin
-          if (axi_r_valid && axi_r_ready) begin
-            axi_r_valid  <= 0;
-            axi_ar_ready <= 1;
-            rstate      <= R_IDLE;
-          end
-        end
-      endcase
+      rstate <= R_IDLE;
+      axi_r_valid <= 0;
+      axi_r_bits_data <= 0;
+      axi_r_bits_resp <= 0;
+    end else if (axi_ar_valid && axi_ar_ready) begin
+      raddr_q <= axi_ar_bits_addr;
+      rcnt <= read_latency;
+      if (read_latency == 0) begin
+        axi_r_bits_data <= mem[axi_ar_bits_addr[17:2]];
+        axi_r_valid <= 1;
+        rstate <= R_RESP;
+      end else begin
+        axi_r_valid <= 0;
+        rstate <= R_WAIT;
+      end
+    end else if (rstate == R_WAIT) begin
+      if (rcnt <= 1) begin
+        axi_r_bits_data <= mem[raddr_q[17:2]];
+        axi_r_valid <= 1;
+        rstate <= R_RESP;
+      end else rcnt <= rcnt - 1;
+    end else if (axi_r_valid && axi_r_ready) begin
+      axi_r_valid <= 0;
+      rstate <= R_IDLE;
     end
   end
 
@@ -248,6 +233,7 @@ module ditdah_e1_bench_tb;
   initial begin
     for (int i = 0; i < MEM_WORDS; i++) mem[i] = 32'h0;
 
+    pipelined_reads = $test$plusargs("pipelined_reads");
     if (!$value$plusargs("image=%s", image_hex)) begin
       $display("FATAL: +image=<hex> required");
       $finish;

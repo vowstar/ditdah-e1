@@ -17,8 +17,12 @@
 #define MULTITHREAD 1
 #define CORE_DEBUG 0
 
-#define COMPILER_VERSION "riscv32-none-elf-gcc"
-#define COMPILER_FLAGS "-march=rv32ec -mabi=ilp32e -Os -ffreestanding -nostdlib"
+#define COMPILER_VERSION __VERSION__
+#ifdef DITDAH_E1_BENCH_CFLAGS
+#define COMPILER_FLAGS DITDAH_E1_BENCH_CFLAGS
+#else
+#define COMPILER_FLAGS "See build flags"
+#endif
 #define MEM_LOCATION "DitDahE1 static RAM"
 
 #define ee_printf coremark_printf

@@ -145,6 +145,14 @@ class RV32ECModel:
     sleeping: bool = False
     trace: list[dict] = field(default_factory=list)
     csrs: dict[int, int] = field(default_factory=dict)
+    enable_c: bool = True
+    enable_zifencei: bool = False
+    enable_zmmul: bool = False
+    enable_zba: bool = False
+
+    @property
+    def pc_alignment_mask(self):
+        return 1 if self.enable_c else 3
 
     def load_words(self, words, base=0):
         addr = base
@@ -185,7 +193,7 @@ class RV32ECModel:
 
     def read_csr(self, addr):
         if addr == CSR_MISA:
-            return MISA_RV32EC
+            return MISA_RV32EC if self.enable_c else MISA_RV32EC & ~(1 << 2)
         if addr in (CSR_MIP, CSR_MVENDORID, CSR_MARCHID, CSR_MIMPID, CSR_MHARTID):
             return 0
         if addr in CSR_WRITABLE:
@@ -203,7 +211,7 @@ class RV32ECModel:
         elif addr == CSR_MTVEC:
             self.csrs[addr] = value & ~0x3
         elif addr == CSR_MEPC:
-            self.csrs[addr] = value & ~0x1
+            self.csrs[addr] = value & ~self.pc_alignment_mask
         elif addr in (CSR_MSCRATCH, CSR_MCAUSE, CSR_MTVAL):
             self.csrs[addr] = value
         else:
@@ -235,11 +243,11 @@ class RV32ECModel:
             self.memory[addr + offset] = (value >> (8 * offset)) & 0xFF
 
     def fetch(self):
-        if self.pc & 0x1:
+        if self.pc & self.pc_alignment_mask:
             raise Trap("instruction_misaligned")
 
         halfword = self.load_u16_raw(self.pc)
-        if (halfword & 0x3) != 0x3:
+        if self.enable_c and (halfword & 0x3) != 0x3:
             return halfword, 2
 
         return self.load_u32_raw(self.pc), 4
@@ -522,7 +530,7 @@ class RV32ECModel:
                 | (bit_range(insn, 30, 21) << 1)
             )
             next_pc = u32(pc + sext(imm, 21))
-            if next_pc & 0x1:
+            if next_pc & self.pc_alignment_mask:
                 raise Trap("instruction_misaligned")
             rd_out, rd_wdata = self.write_reg(rd, pc + length)
 
@@ -533,6 +541,8 @@ class RV32ECModel:
             require_rv32e_reg(rs1)
             imm = sext(bit_range(insn, 31, 20), 12)
             next_pc = u32(self.read_reg(rs1) + imm) & ~1
+            if next_pc & self.pc_alignment_mask:
+                raise Trap("instruction_misaligned")
             rd_out, rd_wdata = self.write_reg(rd, pc + length)
 
         elif opcode == 0x63:
@@ -558,7 +568,7 @@ class RV32ECModel:
                 raise Trap("illegal_instruction")
             if taken:
                 next_pc = u32(pc + sext(imm, 13))
-                if next_pc & 0x1:
+                if next_pc & self.pc_alignment_mask:
                     raise Trap("instruction_misaligned")
 
         elif opcode == 0x03:
@@ -638,7 +648,13 @@ class RV32ECModel:
             lhs = self.read_reg(rs1)
             rhs = self.read_reg(rs2)
             shamt = rhs & 0x1F
-            if funct3 == 0x0 and funct7 == 0x00:
+            if self.enable_zba and funct7 == 0x10 and funct3 in (2, 4, 6):
+                result = (lhs << (funct3 // 2)) + rhs
+            elif self.enable_zmmul and funct7 == 1 and funct3 < 4:
+                lhs = s32(lhs) if funct3 in (1, 2) else lhs
+                rhs = s32(rhs) if funct3 == 1 else rhs
+                result = (lhs * rhs) >> (32 if funct3 else 0)
+            elif funct3 == 0x0 and funct7 == 0x00:
                 result = lhs + rhs
             elif funct3 == 0x0 and funct7 == 0x20:
                 result = lhs - rhs
@@ -663,7 +679,7 @@ class RV32ECModel:
             rd_out, rd_wdata = self.write_reg(rd, result)
 
         elif opcode == 0x0F:
-            if funct3 != 0x0:
+            if funct3 != 0 and not (funct3 == 1 and self.enable_zifencei):
                 raise Trap("illegal_instruction")
 
         elif opcode == 0x73:
@@ -752,9 +768,14 @@ def main():
     parser.add_argument("hex_words", help="text file with 32-bit hex words and optional @addr markers")
     parser.add_argument("--pc", type=lambda text: int(text, 0), default=0)
     parser.add_argument("--max-steps", type=int, default=100)
+    parser.add_argument("--no-c", action="store_true")
+    parser.add_argument("--zifencei", action="store_true")
+    parser.add_argument("--zba", action="store_true")
+    parser.add_argument("--zmmul", action="store_true")
     args = parser.parse_args()
 
-    model = RV32ECModel(pc=args.pc)
+    model = RV32ECModel(pc=args.pc, enable_c=not args.no_c, enable_zifencei=args.zifencei,
+                       enable_zmmul=args.zmmul, enable_zba=args.zba)
     for addr, word in parse_hex_words(args.hex_words):
         model.store_u32_raw(addr, word)
 

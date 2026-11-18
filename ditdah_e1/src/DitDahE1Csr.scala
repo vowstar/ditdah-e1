@@ -95,7 +95,8 @@ trait DitDahE1Csr:
     valid := false.B
     readOnly := false.B
     when(addr === CsrAddr.MSTATUS.B(12)) { valid := true.B; data := mstatus }
-    when(addr === CsrAddr.MISA.B(12)) { valid := true.B; readOnly := true.B; data := 0x40000014.B(parameter.xlen) }
+    val misa = if parameter.enableC then 0x40000014 else 0x40000010
+    when(addr === CsrAddr.MISA.B(12)) { valid := true.B; readOnly := true.B; data := misa.B(parameter.xlen) }
     when(addr === CsrAddr.MIE.B(12)) { valid := true.B; data := mie }
     when(addr === CsrAddr.MTVEC.B(12)) { valid := true.B; data := mtvec }
     when(addr === CsrAddr.MSCRATCH.B(12)) { valid := true.B; data := mscratch }

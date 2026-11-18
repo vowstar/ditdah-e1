@@ -13,6 +13,17 @@ from rv32ec_model import RV32ECModel  # noqa: E402
 from rv32ec_trace_check import compare, load_jsonl  # noqa: E402
 
 
+def test_base_control_transfer_and_fence_options():
+    model = RV32ECModel(enable_c=False, enable_zifencei=True)
+    model.load_words([0x0000100F, 0x002000EF])
+    assert not model.step()["trap"]
+    assert model.step()["trap_cause"] == "instruction_misaligned"
+    assert model.regs[1] == 0
+    assert model.read_csr(0x301) == 0x40000010
+    model.write_csr(0x341, 7)
+    assert model.read_csr(0x341) == 4
+
+
 def r_type(funct7, rs2, rs1, funct3, rd, opcode=0x33):
     return (
         ((funct7 & 0x7F) << 25)
@@ -22,6 +33,31 @@ def r_type(funct7, rs2, rs1, funct3, rd, opcode=0x33):
         | ((rd & 0x1F) << 7)
         | opcode
     )
+
+
+def test_zmmul_signedness_and_illegal_encodings():
+    model = RV32ECModel(enable_zmmul=True)
+    model.regs[1:3] = [0x80000000, 0xFFFFFFFF]
+    model.load_words([r_type(1, 2, 1, op, 3) for op in range(5)])
+    for value in (0x80000000, 0, 0x80000000, 0x7FFFFFFF):
+        assert int(model.step()["rd_wdata"], 16) == value
+    assert model.step()["trap_cause"] == "illegal_instruction"
+    model = RV32ECModel()
+    model.load_words([r_type(1, 2, 1, 0, 3)])
+    assert model.step()["trap_cause"] == "illegal_instruction"
+
+
+def test_zba_address_generation_and_rv32e_registers():
+    model = RV32ECModel(enable_zba=True)
+    model.regs[1:3] = [0x80000003, 0xFFFFFFFF]
+    instructions = [r_type(0x10, 2, 1, op, 3) for op in (2, 4, 6)]
+    model.load_words([*instructions, r_type(0x10, 16, 1, 2, 3)])
+    for expected in (5, 11, 23):
+        assert int(model.step()["rd_wdata"], 16) == expected
+    assert model.step()["trap_cause"] == "rv32e_register"
+    model = RV32ECModel()
+    model.load_words(instructions)
+    assert model.step()["trap_cause"] == "illegal_instruction"
 
 
 def i_type(imm, rs1, funct3, rd, opcode=0x13):

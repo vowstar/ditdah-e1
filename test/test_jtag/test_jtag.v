@@ -38,6 +38,7 @@ module test_jtag;
     reg  jtag_tms;
     reg  jtag_tdi;
     wire jtag_tdo;
+    wire jtag_tdoEnable;
     reg  jtag_trstN;
 
     initial begin
@@ -93,6 +94,7 @@ module test_jtag;
         .jtag_tms            (jtag_tms),
         .jtag_tdi            (jtag_tdi),
         .jtag_tdo            (jtag_tdo),
+        .jtag_tdoEnable      (jtag_tdoEnable),
         .jtag_trstN          (jtag_trstN)
     );
 endmodule

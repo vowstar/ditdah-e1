@@ -46,6 +46,7 @@ JTAG_PORTS = [
     "jtag_tms",
     "jtag_tdi",
     "jtag_tdo",
+    "jtag_tdoEnable",
     "jtag_trstN",
 ]
 

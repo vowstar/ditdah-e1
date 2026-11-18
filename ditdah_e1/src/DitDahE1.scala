@@ -45,6 +45,7 @@ object DitDahE1Module
       dtm.io.tdi := jtag.tdi
       dtm.io.trstN := jtag.trstN
       jtag.tdo := dtm.io.tdo
+      jtag.tdoEnable := dtm.io.tdoEnable
 
       dm.io.clock := io.clock
       dm.io.reset := io.reset
@@ -284,7 +285,7 @@ object DitDahE1Module
     stateRun   := state === CoreState.RUN.U(3)
     stateTrap  := state === CoreState.TRAP.U(3)
     stateDebug := false.B
-    stateStraddle := state === CoreState.STRADDLE.U(3)
+    stateStraddle := (if parameter.enableC then state === CoreState.STRADDLE.U(3) else false.B)
     stateLoad  := state === CoreState.LOAD.U(3)
     stateStore := state === CoreState.STORE.U(3)
     stateSleep := state === CoreState.SLEEP.U(3)
@@ -313,7 +314,7 @@ object DitDahE1Module
       dm.io.abstractDone := debugAbstractDone.get
       dm.io.abstractError := debugAbstractError.get
       dm.io.abstractRdata := debugAbstractRdata.get
-    pcHalfwordHigh := pc.asBits.bit(1)
+    pcHalfwordHigh := (if parameter.enableC then pc.asBits.bit(1) else false.B)
     pcFetchAddr := (pc.asBits.bits(parameter.xlen - 1, 2) ## 0.B(2)).asUInt
 
     fetchRequest := stateRun | stateStraddle
@@ -328,9 +329,114 @@ object DitDahE1Module
     instrReady := fetchResponseOk
     instrRdata := axiR.bits.data.asBits
 
-    loadArValid := stateLoad & !memOutstanding
+    val prefetchOffer = Wire(Bool())
+    val specOwnsResponse = Wire(Bool())
+    val prefetchBusy = Wire(Bool())
+    val prefetchAddress = Wire(UInt(32))
+    val prefetchAccepts = Wire(Bool())
+    val prefetchClaim = Wire(Bool())
+    specOwnsResponse := false.B
+    prefetchClaim := false.B
+    prefetchOffer := false.B
+    prefetchBusy := false.B
+    prefetchAddress := 0.U(32)
+    prefetchAccepts := false.B
+    def connectPrefetch(): Unit =
+      val bits = parameter.prefetchWindowBits
+      val base = (parameter.resetVector >>> bits).B(32 - bits)
+      // A redirected fetch or data read can queue behind a speculative read.
+      val specFirst = RegInit(false.B)
+      val offer = RegInit(false.B)
+      val pending = RegInit(false.B)
+      val held = RegInit(false.B)
+      val stale = RegInit(false.B)
+      val offset = Reg(Bits(bits - 2))
+      val data = Reg(Bits(32))
+      val error = Reg(Bool())
+      val inWindow = instrAddr.asBits.bits(31, bits) === base
+      val current = instrAddr.asBits.bits(bits - 1, 2)
+      val reused = Wire(Bool())
+      val upper = Wire(Bits(16))
+      reused := false.B
+      upper := 0.B(16)
+      if parameter.enableC then
+        val saved = RegInit(false.B)
+        val tag = Reg(Bits(bits - 2))
+        val half = Reg(Bits(16))
+        reused := saved & stateRun & fetchRequest & !fetchOutstanding & pcHalfwordHigh & inWindow & (current === tag)
+        upper := half
+        when(fetchResponseOk & !reused & inWindow) {
+          saved := true.B
+          tag := current
+          half := instrRdata.bits(31, 16)
+        }
+        val modifies = (memAddrReg.asBits.bits(31, bits) === base) & (memAddrReg.asBits.bits(bits - 1, 2) === tag)
+        when((stateStore & modifies) | debugResetReq | debugHaltReq | (commitNow & isFence)) { saved := false.B }
+      val hit = !reused & inWindow & (offset === current) & !stale & fetchRequest & !fetchOutstanding
+      val lastWord = current === ((BigInt(1) << (bits - 2)) - 1).B(bits - 2)
+      val nextOffset = (current.asUInt + 1.U(bits - 2)).asBits.bits(bits - 3, 0)
+      // Transfer an outstanding read to the core when its predicted address is requested.
+      val claim = hit & pending
+      val chain = (claim | (held & hit)) & !lastWord
+      prefetchClaim := claim
+      val issued = offer & axiAr.ready
+      val canReceive = (pending | issued) & (specFirst | (!fetchOutstanding & !memOutstanding))
+      specOwnsResponse := pending & (specFirst | (!fetchOutstanding & !memOutstanding))
+      fetchAcceptsResponse := (fetchOutstanding | fetchArFire) & !specOwnsResponse
+      val receive = canReceive & axiR.valid
+      val served = hit & (held | receive)
+      val fault = held.?(error, axiR.bits.resp =/= 0.U(2))
+      val storeHits = (memAddrReg.asBits.bits(31, bits) === base) & (memAddrReg.asBits.bits(bits - 1, 2) === offset)
+      val invalidate = (stateStore & storeHits) | stateIrq | stateDebug | debugResetReq | debugHaltReq |
+        (commitNow & isFence)
+      prefetchOffer := offer | chain
+      prefetchBusy := offer
+      prefetchAddress := (base ## chain.?(nextOffset, offset) ## 0.B(2)).asUInt
+      prefetchAccepts := canReceive
+      fetchArValid := !reused & fetchRequest & !fetchOutstanding & !offer & !held & !(pending & hit)
+      fetchResponseFire := (fetchAcceptsResponse & axiR.valid) | served | reused
+      fetchResponseError := (fetchAcceptsResponse & axiR.valid & (axiR.bits.resp =/= 0.U(2))) | (served & fault)
+      when(held) { instrRdata := data }
+      when(held & !hit & fetchRequest & !reused) { held := false.B }
+      when(reused) { instrRdata := upper ## 0.B(16) }
+      when(fetchArFire) {
+        held := false.B
+        when(inWindow & !lastWord & (!pending | receive)) {
+          offset := nextOffset
+          offer := true.B
+          stale := false.B
+        }
+      }
+      when(issued) {
+        offer := false.B
+        pending := true.B
+      }
+      when(receive) {
+        pending := false.B
+        held := !hit & !stale & !fetchArFire
+        data := axiR.bits.data.asBits
+        error := axiR.bits.resp =/= 0.U(2)
+      }
+      when(pending & (fetchArFire | loadArFire)) { specFirst := !receive }
+      when(receive) { specFirst := false.B }
+      when(claim) { pending := false.B }
+      when(served) { held := false.B }
+      when(chain) {
+        stale := false.B
+        offset := nextOffset
+        offer := !axiAr.ready
+        pending := axiAr.ready
+      }
+      when(invalidate) {
+        held := false.B
+        stale := true.B
+      }
+
+    if parameter.prefetchWindowBits > 0 then connectPrefetch()
+
+    loadArValid := !prefetchBusy & stateLoad & !memOutstanding
     loadArFire := loadArValid & axiAr.ready
-    loadAcceptsResponse := stateLoad & (memOutstanding | loadArFire)
+    loadAcceptsResponse := stateLoad & (memOutstanding | loadArFire) & !specOwnsResponse
     loadResponseFire := loadAcceptsResponse & axiR.valid
     loadResponseError := loadResponseFire & (axiR.bits.resp =/= 0.U(2))
     loadResponseOk := loadResponseFire & !loadResponseError
@@ -347,7 +453,7 @@ object DitDahE1Module
     lowerHalfwordBits := instrRdata.bits(1, 0)
     upperHalfwordBits := instrRdata.bits(17, 16)
     instrLowBits      := pcHalfwordHigh.?(upperHalfwordBits, lowerHalfwordBits)
-    instrCompressed   := instrLowBits =/= 3.B(2)
+    instrCompressed   := (if parameter.enableC then instrLowBits =/= 3.B(2) else false.B)
     straddled32       := pcHalfwordHigh & !instrCompressed
     selectedHalfword  := pcHalfwordHigh.?(instrRdata.bits(31, 16), instrRdata.bits(15, 0))
 
@@ -648,7 +754,16 @@ object DitDahE1Module
       )) |
       ((funct7 === 0x20.B(7)) & ((funct3 === 0.B(3)) | (funct3 === 5.B(3))))
     )
-    isFence  := (opcode === 0x0f.B(7)) & (funct3 === 0.B(3))
+    val fenceFunction = if parameter.enableZifencei then
+      funct3.asBits.bits(2, 1) === 0.B(2)
+    else funct3 === 0.B(3)
+    val isShiftAdd = if parameter.enableZba then
+      isOpReg & (funct7 === 0x10.B(7)) & !funct3.bit(0) & (funct3 =/= 0.B(3))
+    else false.B
+    val isMultiply = if parameter.enableZmmul then
+      (opcode === 0x33.B(7)) & (funct7 === 1.B(7)) & !funct3.bit(2)
+    else false.B
+    isFence := (opcode === 0x0f.B(7)) & fenceFunction
     isEcall  := decodedInstr === 0x00000073.B(parameter.xlen)
     isEbreak := decodedInstr === 0x00100073.B(parameter.xlen)
     isWfi    := decodedInstr === 0x10500073.B(parameter.xlen)
@@ -668,18 +783,19 @@ object DitDahE1Module
       ((funct3 === 1.B(3)) & memAddr.asBits.bit(0)) |
       ((funct3 === 2.B(3)) & (memAddr.asBits.bits(1, 0) =/= 0.B(2)))
     )
-    execUsesRd  := isLui | isAuipc | isJal | isJalr | isLoad | isAluImm | isAluReg | isCsr
-    execUsesRs1 := isJalr | isBranch | isLoad | isStore | isAluImm | isAluReg | csrUsesRs1
-    execUsesRs2 := isBranch | isStore | isAluReg
-    execKnown   := isLui | isAuipc | isJal | isJalr | isBranch | isLoad | isStore | isAluImm | isAluReg | isFence | isEcall | isEbreak | isWfi | isMret | isCsr | isCNop
+    execUsesRd  := isLui | isAuipc | isJal | isJalr | isLoad | isAluImm | isAluReg | isShiftAdd | isMultiply | isCsr
+    execUsesRs1 := isJalr | isBranch | isLoad | isStore | isAluImm | isAluReg | isShiftAdd | isMultiply | csrUsesRs1
+    execUsesRs2 := isBranch | isStore | isAluReg | isShiftAdd | isMultiply
+    execKnown   := isLui | isAuipc | isJal | isJalr | isBranch | isLoad | isStore | isAluImm | isAluReg | isShiftAdd | isMultiply | isFence | isEcall | isEbreak | isWfi | isMret | isCsr | isCNop
 
     val regAccessIllegal = (execUsesRd & rdIllegal) | (execUsesRs1 & rs1Illegal) | (execUsesRs2 & rs2Illegal)
-    execTrap := (!execKnown) | csrIllegal | regAccessIllegal | loadMisaligned | storeMisaligned | isEcall | isEbreak
+    val targetMisaligned = if parameter.enableC then false.B else
+      (isJal | isJalr | (isBranch & branchTaken)) & !regAccessIllegal & execNextPc.asBits.bit(1)
+    val instructionTrap = !execKnown | csrIllegal | regAccessIllegal | targetMisaligned
+    execTrap := instructionTrap | loadMisaligned | storeMisaligned | isEcall | isEbreak
     if parameter.enableJtag then
       execTrap :=
-        (!execKnown) |
-        csrIllegal |
-        regAccessIllegal |
+        instructionTrap |
         loadMisaligned |
         storeMisaligned |
         isEcall |
@@ -690,6 +806,9 @@ object DitDahE1Module
     }
     when(regAccessIllegal) {
       execTrapCause := TrapCause.RV32E_REGISTER.U(4)
+    }
+    when(targetMisaligned) {
+      execTrapCause := TrapCause.INSTRUCTION_MISALIGN.U(4)
     }
     when(loadMisaligned) {
       execTrapCause := TrapCause.LOAD_MISALIGN.U(4)
@@ -705,6 +824,9 @@ object DitDahE1Module
     }
 
     standardTrapCause := StandardCause.ILLEGAL_INSTRUCTION.B(parameter.xlen)
+    when(targetMisaligned) {
+      standardTrapCause := StandardCause.INSTRUCTION_MISALIGNED.B(parameter.xlen)
+    }
     when(loadMisaligned) {
       standardTrapCause := StandardCause.LOAD_MISALIGNED.B(parameter.xlen)
     }
@@ -720,6 +842,13 @@ object DitDahE1Module
     standardTrapValue := 0.U(parameter.xlen)
     when(!execKnown | csrIllegal) {
       standardTrapValue := commitInstr.asUInt
+      if !parameter.enableC then
+        when(commitInstr.bits(1, 0) =/= 3.B(2)) {
+          standardTrapValue := (0.B(16) ## commitInstr.bits(15, 0)).asUInt
+        }
+    }
+    when(targetMisaligned) {
+      standardTrapValue := execNextPc
     }
     when(loadMisaligned | storeMisaligned) {
       standardTrapValue := memAddr
@@ -764,9 +893,22 @@ object DitDahE1Module
         execWdata := sraImmWdata
       }
     }
+    val shiftedAdd = if parameter.enableZba then
+      val addLeft = Wire(UInt(32))
+      addLeft := rs1Data
+      when(isShiftAdd) {
+        for amount <- 1 to 3 do
+          when(funct3 === (2 * amount).B(3)) {
+            addLeft := (rs1Data.asBits.bits(31 - amount, 0) ## 0.B(amount)).asUInt
+          }
+      }
+      val addResult = (addLeft + rs2Data).asBits.bits(31, 0).asUInt
+      when(isShiftAdd) { execWdata := addResult }
+      Some(addResult)
+    else None
     when(isAluReg) {
       when((funct3 === 0.B(3)) & (funct7 === 0.B(7))) {
-        execWdata := (rs1Data + rs2Data).asBits.bits(parameter.xlen - 1, 0).asUInt
+        execWdata := shiftedAdd.getOrElse((rs1Data + rs2Data).asBits.bits(parameter.xlen - 1, 0).asUInt)
       }
       when((funct3 === 0.B(3)) & (funct7 === 0x20.B(7))) {
         execWdata := (rs1Data - rs2Data).asBits.bits(parameter.xlen - 1, 0).asUInt
@@ -796,6 +938,75 @@ object DitDahE1Module
         execWdata := (rs1Data.asBits & rs2Data.asBits).bits(parameter.xlen - 1, 0).asUInt
       }
     }
+    if parameter.enableZmmul then
+      val active = RegInit(false.B)
+      val count = Reg(UInt(6))
+      val upper = Reg(Bits(33))
+      val lower = Reg(Bits(32))
+      val saveMultiplyFields = parameter.isolateMultiplyOperands && !parameter.enableC
+      val instructionWord = Reg(Bits(if saveMultiplyFields then 14 else 32))
+      val finished = count === 32.U(6)
+      val cancel = debugHaltReq | debugResetReq
+      val start = !active & fetchResponseOk & (stateStraddle | (stateRun & !straddled32)) &
+        isMultiply & !regAccessIllegal & !cancel
+      when(start) {
+        active := true.B
+        count := 0.U(6)
+        upper := 0.B(33)
+        lower := rs2Data.asBits
+        if parameter.fastSmallMultiply then
+          val narrow = (funct3 === 0.B(3)) & ((rs1Data.asBits | rs2Data.asBits).bits(31, 9) === 0.B(23))
+          when(narrow) {
+            val product = if parameter.isolateMultiplyOperands then
+              val smallLeft = isMultiply.?(rs1Data.asBits.bits(8, 0).asUInt, 0.U(9))
+              val smallRight = isMultiply.?(rs2Data.asBits.bits(8, 0).asUInt, 0.U(9))
+              smallLeft * smallRight
+            else rs1Data.asBits.bits(8, 0).asUInt * rs2Data.asBits.bits(8, 0).asUInt
+            lower := 0.B(14) ## product.asBits
+            count := 32.U(6)
+          }
+        if saveMultiplyFields then
+          instructionWord := instrRdata.bits(23, 20) ## instrRdata.bits(18, 15) ##
+            instrRdata.bits(13, 12) ## instrRdata.bits(10, 7)
+        else instructionWord := instrRdata
+        instrReady := false.B
+      }
+      when(active) {
+        fetchRequest := false.B
+        if saveMultiplyFields then
+          // RV32E multiply encodings vary only in three register indices and two function bits.
+          instrRdata := 1.B(7) ## 0.B(1) ## instructionWord.bits(13, 10) ##
+            0.B(1) ## instructionWord.bits(9, 6) ## 0.B(1) ## instructionWord.bits(5, 4) ##
+            0.B(1) ## instructionWord.bits(3, 0) ## 0x33.B(7)
+        else instrRdata := instructionWord
+        instrReady := finished & !cancel
+        when(finished | cancel) {
+          active := false.B
+        }.otherwise {
+          val signedLeft = (funct3 === 1.B(3)) | (funct3 === 2.B(3))
+          val multiplicand = if parameter.isolateMultiplyOperands then active.?(rs1Data, 0.U(32)).asBits else rs1Data.asBits
+          val sign = if parameter.isolateMultiplyOperands then signedLeft & multiplicand.bit(31)
+            else signedLeft & rs1Data.asBits.bit(31)
+          val bits = parameter.multiplyBitsPerCycle
+          val sum = if bits == 1 then
+            val term = lower.bit(0).?((sign.asBits ## sign.asBits ## multiplicand).asUInt, 0.U(34))
+            val extended = (upper.bits(32, 32) ## upper).asUInt
+            val subtract = (count === 31.U(6)) & (funct3 === 1.B(3))
+            subtract.?(extended - term, extended + term).asBits
+          else
+            val lastSigned = (count === (32 - bits).U(6)) & (funct3 === 1.B(3)) & lower.bit(bits - 1)
+            val digit = (lastSigned.asBits ## lower.bits(bits - 1, 0)).asSInt
+            val term = (sign.asBits ## multiplicand).asSInt * digit
+            val extended = ((0 to bits).map(_ => upper.bits(32, 32)).reduce(_ ## _) ## upper).asUInt
+            (extended + term.asBits.asUInt).asBits
+          upper := sum.bits(32 + bits, bits)
+          lower := sum.bits(bits - 1, 0) ## lower.bits(31, bits)
+          count := (count + bits.U(6)).asBits.bits(5, 0).asUInt
+        }
+      }
+      when(isMultiply) {
+        execWdata := (funct3 === 0.B(3)).?(lower.asUInt, upper.bits(31, 0).asUInt)
+      }
     when(isCsr) {
       execWdata := csrReadData.asUInt
     }
@@ -852,10 +1063,14 @@ object DitDahE1Module
     axiW.bits.data   := memStoreDataReg.asUInt
     axiW.bits.strb   := memStoreBeReg
     axiB.ready  := storeComplete
-    axiAr.valid := loadArValid | fetchArValid
+    axiAr.valid := prefetchOffer | loadArValid | fetchArValid
     axiAr.bits.addr  := stateLoad.?((memAddrReg.asBits.bits(parameter.xlen - 1, 2) ## 0.B(2)).asUInt, instrAddr)
     axiAr.bits.prot  := stateLoad.?(2.U(3), 6.U(3))
-    axiR.ready  := loadAcceptsResponse | fetchAcceptsResponse
+    when(prefetchOffer) {
+      axiAr.bits.addr := prefetchAddress
+      axiAr.bits.prot := 6.U(3)
+    }
+    axiR.ready  := prefetchAccepts | loadAcceptsResponse | fetchAcceptsResponse
 
     io.irq.pending := irqIndividuallyPending
     io.status.trap      := stateTrap | trapEventReg
@@ -871,7 +1086,7 @@ object DitDahE1Module
     }.otherwise {
       trapEventReg := false.B
 
-      when(fetchArFire) {
+      when(fetchArFire | prefetchClaim) {
         fetchOutstanding := true.B
       }
       when(fetchResponseFire) {
@@ -1046,7 +1261,7 @@ object DitDahE1Module
             csrMscratch := csrWriteData
           }
           when(csrAddr === CsrAddr.MEPC.B(12)) {
-            csrMepc := (csrWriteData.bits(parameter.xlen - 1, 1) ## 0.B(1)).asUInt
+            csrMepc := (csrWriteData.bits(parameter.xlen - 1, parameter.pcAlignmentBits) ## 0.B(parameter.pcAlignmentBits)).asUInt
           }
           when(csrAddr === CsrAddr.MCAUSE.B(12)) {
             csrMcause := csrWriteData
@@ -1141,6 +1356,7 @@ object DitDahE1Module
         stateSleep,
         stateIrq,
         stateDebug,
+        prefetchBusy | specOwnsResponse,
         fetchResponseFire,
         loadResponseOk,
         loadResponseError,

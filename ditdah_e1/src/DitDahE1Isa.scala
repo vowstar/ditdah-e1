@@ -23,6 +23,7 @@ object TrapCause:
   val STORE_MISALIGN:Int = 6
   val AXI_ERROR:     Int = 7
   val INTERRUPT:     Int = 8
+  val INSTRUCTION_MISALIGN: Int = 9
 
 object CsrAddr:
   val MSTATUS:   Int = 0x300

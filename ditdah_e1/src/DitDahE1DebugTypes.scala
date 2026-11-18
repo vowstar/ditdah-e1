@@ -4,6 +4,10 @@ package com.vowstar.ditdah.e1
 
 import me.jiuyang.zaozi.*
 import me.jiuyang.zaozi.default.{*, given}
+import me.jiuyang.zaozi.reftpe.*
+import me.jiuyang.zaozi.valuetpe.*
+import java.lang.foreign.Arena
+import org.llvm.mlir.scalalib.capi.ir.{Block, Context}
 
 class DitDahE1DebugLayers(parameter: DitDahE1Parameter) extends LayerInterface(parameter):
   def layers = Seq.empty
@@ -85,6 +89,7 @@ class JtagDtmIO(parameter: DitDahE1Parameter) extends HWBundle(parameter):
   val tdi   = Flipped(Bool())
   val trstN = Flipped(Bool())
   val tdo   = Aligned(Bool())
+  val tdoEnable = Aligned(Bool())
 
   val requestToggle = Aligned(Bool())
   val requestAddr   = Aligned(UInt(7))
@@ -131,3 +136,17 @@ class DebugModuleIO(parameter: DitDahE1Parameter) extends HWBundle(parameter):
   val abstractDone  = Flipped(Bool())
   val abstractError = Flipped(UInt(3))
   val abstractRdata = Flipped(UInt(32))
+
+private[e1] object DebugClockReset:
+  class Signal extends Bundle:
+    val value = Aligned(Reset())
+  def release(clock: Ref[Clock], reset: Ref[Reset])(using Arena, Context, Block, InstanceContext) =
+    given ClockScope = ClockScope.posedge(clock)
+    given ResetScope = ResetScope.asyncActiveHigh(reset)
+    val meta = RegInit(true.B)
+    val held = RegInit(true.B)
+    meta := false.B
+    held := meta
+    val released = Wire(new Signal)
+    released.value := held.asReset
+    released.value

@@ -69,6 +69,7 @@ trait DitDahE1DebugHart:
       stateSleep: Referable[Bool],
       stateIrq: Referable[Bool],
       stateDebug: Referable[Bool],
+      prefetchBusBusy: Referable[Bool],
       fetchResponseFire: Referable[Bool],
       loadResponseOk: Referable[Bool],
       loadResponseError: Referable[Bool],
@@ -135,8 +136,9 @@ trait DitDahE1DebugHart:
       debugRegisterReadData := debugDpc
     }
 
-    val debugReadActive = stateDebug & debugMemBusy & !debugMemWrite
-    val debugWriteActive = stateDebug & debugMemBusy & debugMemWrite
+    val debugBusGranted = stateDebug & debugMemBusy & !prefetchBusBusy
+    val debugReadActive = debugBusGranted & !debugMemWrite
+    val debugWriteActive = debugBusGranted & debugMemWrite
     val debugArValid = debugReadActive & !debugMemOutstanding
     val debugArFire = debugArValid & axiAr.ready
     val debugReadAcceptsResponse = debugReadActive & (debugMemOutstanding | debugArFire)
@@ -215,7 +217,7 @@ trait DitDahE1DebugHart:
       debugLoadData := (0.B(16) ## debugLoadHalf).asUInt
     }
 
-    when(stateDebug & debugMemBusy) {
+    when(debugBusGranted) {
       axiAw.valid := debugAwValid
       axiAw.bits.addr := (debugMemAddr.asBits.bits(parameter.xlen - 1, 2) ## 0.B(2)).asUInt
       axiAw.bits.prot := 2.U(3)
@@ -278,7 +280,7 @@ trait DitDahE1DebugHart:
               ).asUInt
             }
             when(debugIsDpc) {
-              debugDpc := (dm.abstractData.asBits.bits(parameter.xlen - 1, 1) ## 0.B(1)).asUInt
+              debugDpc := (dm.abstractData.asBits.bits(parameter.xlen - 1, parameter.pcAlignmentBits) ## 0.B(parameter.pcAlignmentBits)).asUInt
             }
             when(debugIsCsr) {
               when(debugCsrReadOnly) {
@@ -297,7 +299,7 @@ trait DitDahE1DebugHart:
                   csrMscratch := dm.abstractData.asBits
                 }
                 when(debugCsrAddr === CsrAddr.MEPC.B(12)) {
-                  csrMepc := (dm.abstractData.asBits.bits(parameter.xlen - 1, 1) ## 0.B(1)).asUInt
+                  csrMepc := (dm.abstractData.asBits.bits(parameter.xlen - 1, parameter.pcAlignmentBits) ## 0.B(parameter.pcAlignmentBits)).asUInt
                 }
                 when(debugCsrAddr === CsrAddr.MCAUSE.B(12)) {
                   csrMcause := dm.abstractData.asBits

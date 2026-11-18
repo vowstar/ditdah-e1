@@ -129,6 +129,29 @@ test-scripts:
 test-jtag: build-jtag
 	$(MAKE) -C test/test_jtag
 
+.PHONY: test-jtag-prefetch
+test-jtag-prefetch:
+	OUTPUT_DIR=result/$@ build-ditdah-e1 --jtag --prefetch-window-bits 6 --zba --zifencei --zmmul --multiply-bits 4 --fast-small-multiply
+	$(MAKE) -C test/test_jtag MODULE=test_jtag_prefetch \
+		VERILOG_DIR=$(abspath result/$@) SIM_BUILD=$(abspath result/$@/sim_build) \
+		COCOTB_RESULTS_FILE=$(abspath result/$@/results.xml)
+
+.PHONY: test-rv32e test-zifencei test-zmmul test-prefetch
+test-prefetch: ISA_OPTIONS = --zba --prefetch-window-bits 6 --zmmul --fast-small-multiply --isolate-multiply-operands --zifencei
+test-prefetch: ISA_TEST = test_prefetch,test_zmmul,test_rv32e
+test-prefetch: export TEST_ZIFENCEI = 1
+MULTIPLY_BITS ?= 1
+test-zmmul: ISA_OPTIONS = --zmmul --multiply-bits $(MULTIPLY_BITS)
+test-zmmul: ISA_TEST = test_zmmul
+test-rv32e test-zifencei: ISA_TEST = test_rv32e
+test-zifencei: ISA_OPTIONS = --zifencei
+test-zifencei: export TEST_ZIFENCEI = 1
+test-rv32e test-zifencei test-zmmul test-prefetch:
+	OUTPUT_DIR=result/$@ build-ditdah-e1 --no-c --trace $(ISA_OPTIONS)
+	$(MAKE) -C test/test_ditdah_e1 MODULE=$(ISA_TEST) \
+		VERILOG_DIR=$(abspath result/$@) SIM_BUILD=$(abspath result/$@/sim_build) \
+		COCOTB_RESULTS_FILE=$(abspath result/$@/results.xml)
+
 test-isa-rtl: test-isa build-trace
 	python3 scripts/rv32ec_isa_regress.py --out-dir result/isa
 	python3 scripts/run_rtl_isa_matrix.py --isa-dir result/isa --out-dir result/rtl_trace/isa_artifacts

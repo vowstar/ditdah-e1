@@ -207,11 +207,52 @@
           JAVA_LIBRARY_PATH="${javaLibraryPath}"
           OUTPUT_DIR="''${OUTPUT_DIR:-$PWD/result}"
           ENABLE_TRACE="''${DITDAH_E1_ENABLE_TRACE:-${if ditdah_e1Config.enableTrace then "true" else "false"}}"
+          ENABLE_C=true
+          ENABLE_ZIFENCEI=false
+          ENABLE_ZMMUL=false
+          MULTIPLY_BITS=1
+          FAST_SMALL_MULTIPLY=false
+          ISOLATE_MULTIPLY=false
+          PREFETCH_BITS=0
+          ENABLE_ZBA=false
           ENABLE_JTAG="''${DITDAH_E1_ENABLE_JTAG:-${if ditdah_e1Config.enableJtag then "true" else "false"}}"
+          JTAG_IDCODE="${toString ditdah_e1Config.jtagIdcode}"
           ENABLE_SVA="''${DITDAH_E1_ENABLE_SVA:-${if ditdah_e1Config.enableSva then "true" else "false"}}"
 
           while [ "$#" -gt 0 ]; do
             case "$1" in
+              --c)
+                ENABLE_C=true
+                ;;
+              --no-c)
+                ENABLE_C=false
+                ;;
+              --prefetch-window-bits)
+                shift
+                PREFETCH_BITS="''${1:?expected a window size in address bits}"
+                ;;
+              --fast-small-multiply)
+                FAST_SMALL_MULTIPLY=true
+                ;;
+              --isolate-multiply-operands)
+                ISOLATE_MULTIPLY=true
+                ;;
+              --multiply-bits)
+                shift
+                case "''${1:-}" in
+                  1|2|4) MULTIPLY_BITS="$1" ;;
+                  *) echo "expected --multiply-bits 1, 2 or 4" >&2; exit 2 ;;
+                esac
+                ;;
+              --zba)
+                ENABLE_ZBA=true
+                ;;
+              --zmmul)
+                ENABLE_ZMMUL=true
+                ;;
+              --zifencei)
+                ENABLE_ZIFENCEI=true
+                ;;
               --trace)
                 ENABLE_TRACE=true
                 ;;
@@ -220,6 +261,17 @@
                 ;;
               --jtag)
                 ENABLE_JTAG=true
+                ;;
+              --jtag-idcode)
+                if [[ $# -lt 2 || ! "$2" =~ ^(0[xX][0-9A-Fa-f]{1,8}|[0-9]{1,10})$ ]]; then
+                  echo "--jtag-idcode requires a 32-bit decimal or hexadecimal value" >&2
+                  exit 2
+                fi
+                shift
+                case "$1" in
+                  0x*|0X*) JTAG_IDCODE=$((16#''${1:2})) ;;
+                  *) JTAG_IDCODE=$((10#$1)) ;;
+                esac
                 ;;
               --sva)
                 ENABLE_SVA=true
@@ -232,7 +284,7 @@
                 ;;
               --help)
                 cat <<'EOF'
-Usage: build-ditdah-e1 [--trace|--no-trace] [--jtag|--no-jtag]
+Usage: build-ditdah-e1 [--c|--no-c] [--zifencei] [--zba] [--zmmul] [--multiply-bits 1|2|4] [--fast-small-multiply] [--isolate-multiply-operands] [--prefetch-window-bits N] [--trace|--no-trace] [--jtag|--no-jtag] [--jtag-idcode ID]
 
 Generate DitDahE1 Verilog into OUTPUT_DIR, defaulting to ./result.
 The default production build omits architectural trace ports. Use --trace
@@ -293,9 +345,17 @@ EOF
             -- config "$OUTPUT_DIR/ditdah_e1_config.json" \
             --resetVector ${toString ditdah_e1Config.resetVector} \
             --enableTrace "$ENABLE_TRACE" \
+            --enableC "$ENABLE_C" \
+            --prefetchWindowBits "$PREFETCH_BITS" \
+            --fastSmallMultiply "$FAST_SMALL_MULTIPLY" \
+            --isolateMultiplyOperands "$ISOLATE_MULTIPLY" \
+            --multiplyBitsPerCycle "$MULTIPLY_BITS" \
+            --enableZba "$ENABLE_ZBA" \
+            --enableZmmul "$ENABLE_ZMMUL" \
+            --enableZifencei "$ENABLE_ZIFENCEI" \
             --enableJtag "$ENABLE_JTAG" \
             --enableSva "$ENABLE_SVA" \
-            --jtagIdcode ${toString ditdah_e1Config.jtagIdcode}
+            --jtagIdcode "$JTAG_IDCODE"
 
           scala-cli run \
             ${commonScalaArgs} \

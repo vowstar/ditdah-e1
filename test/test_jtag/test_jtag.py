@@ -93,6 +93,7 @@ class JtagDtm:
         await self.cycle(0)
         captured = 0
         for bit in range(5):
+            assert int(self.dut.jtag_tdoEnable.value)
             captured |= (await self.cycle(bit == 4, (value >> bit) & 1)) << bit
         await self.cycle(1)
         await self.cycle(0)
@@ -104,9 +105,11 @@ class JtagDtm:
         await self.cycle(0)
         captured = 0
         for bit in range(width):
+            assert int(self.dut.jtag_tdoEnable.value)
             captured |= (await self.cycle(bit == width - 1, (value >> bit) & 1)) << bit
         await self.cycle(1)
         await self.cycle(0)
+        assert not int(self.dut.jtag_tdoEnable.value)
         return captured
 
     async def idle(self, cycles=10):
@@ -146,6 +149,44 @@ STATUS_ALL_HAVE_RESET = 1 << 19
 STATUS_ALL_RESUME_ACK = 1 << 17
 STATUS_ALL_RUNNING = 1 << 11
 STATUS_ALL_HALTED = 1 << 9
+
+
+@cocotb.test()
+@cocotb.parametrize(tap_reset=[True, False])
+async def outstanding_write_survives_transport_reset(dut, tap_reset):
+    dut.reset.value = Immediate(1)
+    dut.jtag_tck.value = Immediate(0)
+    dut.jtag_trstN.value = Immediate(0)
+    dut.jtag_tms.value = Immediate(1)
+    dut.jtag_tdi.value = Immediate(0)
+    clock = Clock(dut.clk, 14, unit="ns")
+    clock.start()
+    await ClockCycles(dut.clk, 3)
+    dut.reset.value = 0
+    dtm = JtagDtm(dut)
+    await dtm.reset()
+    await dtm.scan_ir(dtm.IR_DMI)
+    await dtm.write(DM_CONTROL, DM_ACTIVE)
+
+    clock.stop()
+    await dtm.scan_dr((DM_DATA0 << 34) | (37 << 2) | 2, 41)
+    if tap_reset:
+        await dtm.reset()
+    else:
+        await dtm.scan_ir(dtm.IR_DTMCS)
+        await dtm.scan_dr(1 << 17, 32)
+    await dtm.scan_ir(dtm.IR_DMI)
+    await dtm.scan_dr((DM_DATA0 << 34) | (53 << 2) | 2, 41)
+    await dtm.scan_ir(dtm.IR_DTMCS)
+    assert ((await dtm.scan_dr(0, 32)) >> 10) & 3 == 3
+
+    clock.start()
+    await dtm.idle()
+    await dtm.scan_dr(1 << 16, 32)
+    await dtm.scan_ir(dtm.IR_DMI)
+    assert await dtm.read(DM_DATA0) == 37
+    await dtm.write(DM_DATA0, 53)
+    assert await dtm.read(DM_DATA0) == 53
 
 CMD_ACCESS_REGISTER = 0 << 24
 CMD_ACCESS_MEMORY = 2 << 24
@@ -338,11 +379,13 @@ async def test_jtag_debug_flow(dut):
     await dtm.reset()
 
     idcode = await dtm.scan_dr(0, 32)
-    assert idcode == 1
+    expected_idcode = int(os.environ.get("JTAG_TEST_IDCODE", "1"), 0)
+    assert idcode == expected_idcode
     assert await dtm.scan_ir(JtagDtm.IR_DTMCS) & 0x3 == 1
     dtmcs = await dtm.scan_dr(0, 32)
     assert dtmcs & 0xF == 1
     assert (dtmcs >> 4) & 0x3F == 7
+    assert (dtmcs >> 12) & 7 == 1
 
     await dtm.scan_ir(JtagDtm.IR_DMI)
     await dtm.scan_dr(3, 41)
@@ -355,11 +398,11 @@ async def test_jtag_debug_flow(dut):
     for _ in range(5):
         await dtm.cycle(1)
     await dtm.cycle(0)
-    assert await dtm.scan_dr(0, 32) == 1
+    assert await dtm.scan_dr(0, 32) == expected_idcode
 
     await dtm.scan_ir(0x1F)
-    assert await dtm.scan_dr(1, 1) == 0
-    assert await dtm.scan_dr(0, 1) == 1
+    assert await dtm.scan_dr(1, 2) == 2
+    assert await dtm.scan_dr(0, 1) == 0
 
     await dtm.scan_ir(JtagDtm.IR_DMI)
     await dtm.write(DM_CONTROL, DM_ACTIVE)
@@ -390,6 +433,9 @@ async def test_jtag_debug_flow(dut):
     await wait_abstract_error(dtm, 5)
     await clear_abstract_error(dtm, 5)
 
+    await abstract_write_register(dtm, CSR_DPC, 0x43)
+    expected_dpc = 0x42 if os.environ.get("JTAG_TEST_C", "1") == "1" else 0x40
+    assert await abstract_read_register(dtm, CSR_DPC) == expected_dpc
     await abstract_write_register(dtm, CSR_DPC, 0x40)
     await abstract_write_register(dtm, CSR_MSTATUS, 1 << 3)
     await abstract_write_register(dtm, CSR_MIE, 1 << 7)

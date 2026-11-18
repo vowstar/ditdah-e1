@@ -59,6 +59,7 @@ module DitDahE1(
   input jtag_tms,
   input jtag_tdi,
   output jtag_tdo,
+  output jtag_tdoEnable,
   input jtag_trstN
 );
   DitDahE1JtagDtm dtm();

@@ -3,7 +3,7 @@
 
 module DitDahE1JtagDtmFormal;
     reg tck = 1'b0;
-    always #1 tck = !tck;
+    always @($global_clock) tck <= !tck;
 
     reg reset = 1'b1;
     always @(posedge tck) begin
@@ -78,6 +78,14 @@ module DitDahE1JtagDtmFormal;
         end
     endfunction
 
+    wire asyncTapReset = reset || !trstN;
+    reg [1:0] resetPipe = 2'b11;
+    always @(posedge tck or posedge asyncTapReset) begin
+        if (asyncTapReset) resetPipe <= 2'b11;
+        else resetPipe <= {resetPipe[0], 1'b0};
+    end
+    wire tapReset = resetPipe[1];
+
     reg       f_past_valid = 1'b0;
     reg [2:0] tms_high_count = 3'd0;
 
@@ -96,7 +104,7 @@ module DitDahE1JtagDtmFormal;
                 assume(responseOp == $past(responseOp));
             end
 
-            if ($past(trstN)) begin
+            if (!tapReset && !$past(tapReset)) begin
                 assert(probeState == tap_next($past(probeState), $past(tms)));
             end else begin
                 assert(probeState == 4'h0);
@@ -105,30 +113,28 @@ module DitDahE1JtagDtmFormal;
                 assert(probeStickyStatus == 2'h0);
             end
 
-            if ($past(trstN && probeState == 4'h0)) begin
+            if (!tapReset && $past(!tapReset && probeState == 4'h0)) begin
                 assert(probeIr == 5'h01);
                 assert(!probeOutstanding);
-                assert(requestOp == 2'h0);
+                assert(requestToggle == $past(requestToggle));
                 assert(probeStickyStatus == 2'h0);
             end
-            if ($past(trstN && probeState == 4'hA)) begin
+            if (!tapReset && $past(!tapReset && probeState == 4'hA)) begin
                 assert(probeIrShift == 5'h01);
             end
-            if ($past(trstN && probeState == 4'h3 && probeIr == 5'h01)) begin
+            if (!tapReset && $past(!tapReset && probeState == 4'h3 && probeIr == 5'h01)) begin
                 assert(probeDrShift == 41'h1);
             end
-            if ($past(trstN && probeState == 4'h3 && probeIr == 5'h10)) begin
-                assert((probeDrShift[31:0] & 32'hFFFF_F3FF) == 32'h0000_7071);
+            if (!tapReset && $past(!tapReset && probeState == 4'h3 && probeIr == 5'h10)) begin
+                assert((probeDrShift[31:0] & 32'hFFFF_F3FF) == 32'h0000_1071);
                 assert(probeDrShift[11:10] == $past(probeStickyStatus));
                 assert(probeDrShift[40:32] == 9'h0);
             end
 
             if (requestToggle == $past(requestToggle)) begin
-                if ($past(trstN && probeState != 4'h0)) begin
-                    assert(requestAddr == $past(requestAddr));
-                    assert(requestData == $past(requestData));
-                    assert(requestOp == $past(requestOp));
-                end
+                assert(requestAddr == $past(requestAddr));
+                assert(requestData == $past(requestData));
+                assert(requestOp == $past(requestOp));
             end else begin
                 assert($past(trstN));
                 assert($past(probeState) == 4'h8);

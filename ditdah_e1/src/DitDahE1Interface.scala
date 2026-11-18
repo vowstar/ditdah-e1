@@ -57,6 +57,7 @@ class JtagBundle extends Bundle:
   val tms   = Flipped(Bool())
   val tdi   = Flipped(Bool())
   val tdo   = Aligned(Bool())
+  val tdoEnable = Aligned(Bool())
   val trstN = Flipped(Bool())
 
 class DitDahE1IO(parameter: DitDahE1Parameter) extends HWBundle(parameter):

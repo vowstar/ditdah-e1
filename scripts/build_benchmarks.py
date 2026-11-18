@@ -13,8 +13,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+BENCHMARK_ISAS = tuple(base + ext for base in ("rv32e", "rv32ec")
+                       for ext in ("", "_zba", "_zmmul", "_zba_zmmul"))
+
+
 COMMON_CFLAGS = [
-    "-march=rv32ec",
     "-mabi=ilp32e",
     "-mcmodel=medlow",
     "-mstrict-align",
@@ -65,6 +68,9 @@ def build_one(name, sources, extra_cflags, defines, args):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     gcc = tool(args.prefix, "gcc")
+    cflags = [f"-march={args.isa}", *COMMON_CFLAGS, *extra_cflags]
+    if args.omit_frame_pointer:
+        cflags.extend(["-fomit-frame-pointer", "-momit-leaf-frame-pointer"])
     objcopy = tool(args.prefix, "objcopy")
     objdump = tool(args.prefix, "objdump")
     nm = tool(args.prefix, "nm")
@@ -76,8 +82,8 @@ def build_one(name, sources, extra_cflags, defines, args):
 
     cmd = [
         gcc,
-        *COMMON_CFLAGS,
-        *extra_cflags,
+        *cflags,
+        f'-DDITDAH_E1_BENCH_CFLAGS="{" ".join(cflags)}"',
         "-Ibench/common",
         "-Ibench/coremark/ditdah_e1",
         "-Ibench/coremark/upstream",
@@ -107,15 +113,16 @@ def build_one(name, sources, extra_cflags, defines, args):
         json.dumps(
             {
                 "name": name,
-                "elf": str(elf.relative_to(REPO_ROOT)),
-                "bin": str(binary.relative_to(REPO_ROOT)),
-                "disasm": str(disasm.relative_to(REPO_ROOT)),
+                "compiler": subprocess.check_output([gcc, "--version"], text=True).splitlines()[0],
+                "elf": os.path.relpath(elf, REPO_ROOT),
+                "bin": os.path.relpath(binary, REPO_ROOT),
+                "disasm": os.path.relpath(disasm, REPO_ROOT),
                 "result_addr": result_addr,
                 "timing_addr": timing_addr,
                 "image_end": image_end,
                 "binary_size": binary_size(binary),
                 "memory_size": args.memory_size,
-                "cflags": COMMON_CFLAGS + extra_cflags,
+                "cflags": cflags,
                 "defines": defines,
                 "sources": sources,
             },
@@ -128,7 +135,9 @@ def build_one(name, sources, extra_cflags, defines, args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build DitDahE1 RV32EC benchmark images")
+    parser = argparse.ArgumentParser(description="Build DitDahE1 benchmark images")
+    parser.add_argument("--isa", choices=BENCHMARK_ISAS, default="rv32ec")
+    parser.add_argument("--omit-frame-pointer", action="store_true")
     parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "result" / "bench")
     parser.add_argument("--prefix", default=os.environ.get("RISCV_PREFIX", "riscv32-unknown-elf-"))
     parser.add_argument("--coremark-iterations", type=int, default=1)

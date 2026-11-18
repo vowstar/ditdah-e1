@@ -54,6 +54,7 @@ def run_proof(name, top, probe_top, depth, out_dir, slang_so):
     proof_dir.mkdir(parents=True, exist_ok=True)
     smt_path = proof_dir / f"{name}.smt2"
     vcd_path = proof_dir / f"{name}.vcd"
+    clock_pass = "clk2fflogic" if name == "dtm_protocol" else "async2sync"
     read_files = " ".join([PROBE_TOP] + RTL_FILES)
     steps = [
         run(
@@ -68,7 +69,7 @@ def run_proof(name, top, probe_top, depth, out_dir, slang_so):
                     # yosys lowers SV assert()/assume() to edge-triggered
                     # $check cells; write_smt2 emits only $assert/$assume, so
                     # without this the SMT2 assertion function is constant true.
-                    f"prep -top {top}; async2sync; chformal -lower; opt_clean; "
+                    f"prep -top {top}; {clock_pass}; chformal -lower; opt_clean; "
                     f"write_smt2 -wires {smt_path}"
                 ),
             ],
@@ -83,7 +84,7 @@ def run_proof(name, top, probe_top, depth, out_dir, slang_so):
                     "-s",
                     "z3",
                     "-t",
-                    str(depth),
+                    str(depth * 2 if name == "dtm_protocol" else depth),
                     "--dump-vcd",
                     str(vcd_path),
                     str(smt_path),

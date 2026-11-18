@@ -107,6 +107,11 @@ RTL_MATRIX_STEPS = [
 
 FULL_STEPS = [
     Step(
+        "compliance_signatures",
+        ["python3", "scripts/run_compliance.py"],
+        "Build the signature-test firmware and check it against Sail.",
+    ),
+    Step(
         "rtl_cocotb_full",
         ["make", "-C", "test/test_ditdah_e1"],
         "Run the full directed cocotb RTL suite, including benchmark completion tests.",
@@ -114,6 +119,16 @@ FULL_STEPS = [
 ]
 
 SIGNOFF_STEPS = [
+    Step(
+        "optional_fetch_and_arithmetic",
+        ["make", "test-prefetch"],
+        "Check read ordering, executable stores and integer multiplication.",
+    ),
+    Step(
+        "jtag_prefetch",
+        ["make", "test-jtag-prefetch"],
+        "Check debug access with an outstanding fetch.",
+    ),
     Step(
         "spike_compatible_matrix",
         [

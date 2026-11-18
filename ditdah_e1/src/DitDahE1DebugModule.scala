@@ -17,7 +17,8 @@ object DitDahE1DebugModule
     val io = summon[Interface[DebugModuleIO]]
 
     given ClockScope = ClockScope.posedge(io.clock)
-    given ResetScope = ResetScope.syncActiveHigh(io.reset)
+    val systemReset = DebugClockReset.release(io.clock, io.reset)
+    given ResetScope = ResetScope.asyncActiveHigh(systemReset)
 
     val requestToggleMeta = RegInit(false.B)
     val requestToggleSync = RegInit(false.B)

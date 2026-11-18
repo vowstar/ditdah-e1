@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 """Reproducible RTL benchmark scoring for DitDahE1.
 
-Builds CoreMark/Dhrystone for RV32EC, runs the no-trace netlist under a
+Builds CoreMark/Dhrystone for the selected ISA, runs the no-trace netlist under a
 standalone Verilator harness (bench/sim/ditdah_e1_bench_tb.sv) against two
 memory models, and emits frequency-normalised CoreMark/MHz and DMIPS/MHz.
 Cycle counts are exact (simulator) between the in-program timing markers.
@@ -12,10 +12,13 @@ Scores are RTL cycle-accurate, not EEMBC-certified.
 
 import argparse
 import json
+import os
 import struct
 import subprocess
 import sys
 from pathlib import Path
+
+from build_benchmarks import BENCHMARK_ISAS
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -44,10 +47,12 @@ def bin_to_hex(bin_path, hex_path):
     hex_path.write_text("\n".join("%08x" % w for w in words) + "\n", encoding="utf-8")
 
 
-def build_benchmarks(out_dir, coremark_iterations, dhrystone_runs):
+def build_benchmarks(out_dir, coremark_iterations, dhrystone_runs, isa, omit_frame_pointer=False):
     run([
         sys.executable, "scripts/build_benchmarks.py",
         "--out-dir", str(out_dir),
+        "--isa", isa,
+        *(["--omit-frame-pointer"] if omit_frame_pointer else []),
         "--coremark-iterations", str(coremark_iterations),
         "--coremark-seed1", str(COREMARK_SEEDS[0]),
         "--coremark-seed2", str(COREMARK_SEEDS[1]),
@@ -60,9 +65,6 @@ def build_benchmarks(out_dir, coremark_iterations, dhrystone_runs):
 def build_sim(netlist, tb, sim_dir):
     sim_dir.mkdir(parents=True, exist_ok=True)
     binary = sim_dir / "obj_dir" / "ditdah_e1_bench_sim"
-    newest_src = max(netlist.stat().st_mtime, tb.stat().st_mtime)
-    if binary.exists() and binary.stat().st_mtime >= newest_src:
-        return binary
     run([
         "verilator", "--binary", "--timing", "-j", "0",
         "-Wno-SELRANGE", "-Wno-WIDTH", "-Wno-BLKANDNBLK", "-Wno-MINTYPMAXDLY",
@@ -75,7 +77,7 @@ def build_sim(netlist, tb, sim_dir):
     return binary
 
 
-def run_sim(binary, hex_path, manifest, read_latency, write_latency, max_cycles):
+def run_sim(binary, hex_path, manifest, read_latency, write_latency, max_cycles, pipelined_reads=False):
     out = subprocess.check_output([
         str(binary),
         f"+image={hex_path}",
@@ -84,6 +86,7 @@ def run_sim(binary, hex_path, manifest, read_latency, write_latency, max_cycles)
         f"+read_latency={read_latency}",
         f"+write_latency={write_latency}",
         f"+max_cycles={max_cycles}",
+        *(["+pipelined_reads"] if pipelined_reads else []),
     ], text=True)
     result, timing = None, None
     for line in out.splitlines():
@@ -141,7 +144,7 @@ def write_markdown(path, report):
         "",
         "RTL cycle-accurate, frequency-normalised. Not EEMBC-certified.",
         "",
-        f"- ISA/ABI: `{report['march']}` / `{report['mabi']}` (no hardware mul/div)",
+        f"- ISA/ABI: `{report['march']}` / `{report['mabi']}`",
         f"- CoreMark: {report['coremark_iterations']} iterations, seeds "
         f"{report['coremark_seeds']}, TOTAL_DATA_SIZE={report['coremark_total_data_size']}",
         f"- Dhrystone: {report['dhrystone_runs']} runs",
@@ -159,6 +162,9 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--bench-dir", type=Path, default=REPO_ROOT / "result" / "bench-score")
     p.add_argument("--netlist", type=Path, default=REPO_ROOT / "result" / "DitDahE1.sv")
+    p.add_argument("--isa", choices=BENCHMARK_ISAS, default="rv32ec")
+    p.add_argument("--omit-frame-pointer", action="store_true")
+    p.add_argument("--pipelined-reads", action="store_true", help="accept a new address on the preceding read response")
     p.add_argument("--coremark-iterations", type=int, default=200)
     p.add_argument("--dhrystone-runs", type=int, default=100000)
     p.add_argument("--frequency-mhz", type=float, default=100.0)
@@ -171,17 +177,35 @@ def main():
     if "trace_" in args.netlist.read_text(encoding="utf-8"):
         raise SystemExit(f"{args.netlist} has trace ports; score the no-trace netlist")
 
-    bench_dir = args.bench_dir
+    bench_dir = args.bench_dir.resolve()
     if not args.skip_build_bench:
-        build_benchmarks(bench_dir, args.coremark_iterations, args.dhrystone_runs)
+        build_benchmarks(bench_dir, args.coremark_iterations, args.dhrystone_runs, args.isa, args.omit_frame_pointer)
 
     tb = REPO_ROOT / "bench" / "sim" / "ditdah_e1_bench_tb.sv"
     sim_dir = bench_dir / "sim"
-    binary = build_sim(args.netlist, tb, sim_dir)
-
-    manifests, hexes = {}, {}
+    expected_defines = {
+        "coremark": {
+            "DITDAH_E1_COREMARK_ITERATIONS": args.coremark_iterations,
+            "TOTAL_DATA_SIZE": COREMARK_TOTAL_DATA_SIZE,
+            **{f"DITDAH_E1_COREMARK_SEED{i}": seed
+               for i, seed in enumerate(COREMARK_SEEDS, 1)},
+        },
+        "dhrystone": {"DITDAH_E1_DHRYSTONE_RUNS": args.dhrystone_runs},
+    }
+    manifests = {}
     for name in BENCH_IDS:
         manifests[name] = json.loads((bench_dir / name / f"{name}.manifest.json").read_text())
+        for key, value in expected_defines[name].items():
+            actual = manifests[name]["defines"].get(key)
+            if actual != value:
+                raise SystemExit(f"{name} image has {key}={actual}, expected {value}")
+        if f"-march={args.isa}" not in manifests[name]["cflags"]:
+            raise SystemExit(f"{name} image does not target {args.isa}")
+        if args.omit_frame_pointer and "-fomit-frame-pointer" not in manifests[name]["cflags"]:
+            raise SystemExit(f"{name} image lacks the requested frame-pointer options")
+    binary = build_sim(args.netlist.resolve(), tb, sim_dir)
+    hexes = {}
+    for name in BENCH_IDS:
         hexes[name] = sim_dir / f"{name}.hex"
         bin_to_hex(REPO_ROOT / manifests[name]["bin"], hexes[name])
 
@@ -190,7 +214,7 @@ def main():
         results[model_name] = {}
         for name in BENCH_IDS:
             result, timing = run_sim(
-                binary, hexes[name], manifests[name], rlat, wlat, args.max_cycles)
+                binary, hexes[name], manifests[name], rlat, wlat, args.max_cycles, args.pipelined_reads)
             results[model_name][name] = score_one(
                 name, manifests[name], result, timing, args.frequency_mhz)
             s = results[model_name][name]
@@ -201,7 +225,9 @@ def main():
 
     report = {
         "certification_status": "rtl_cycle_accurate_not_eembc_certified",
-        "march": "rv32ec",
+        "march": args.isa,
+        "compiler": manifests["coremark"].get("compiler"),
+        "pipelined_reads": args.pipelined_reads,
         "mabi": "ilp32e",
         "cflags": " ".join(manifests["coremark"]["cflags"]),
         "frequency_mhz": args.frequency_mhz,
@@ -219,7 +245,7 @@ def main():
     out_md = bench_dir / "benchmark_scores.md"
     out_json.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     write_markdown(out_md, report)
-    print(f"wrote {out_json.relative_to(REPO_ROOT)} and {out_md.relative_to(REPO_ROOT)}")
+    print(f"wrote {os.path.relpath(out_json, REPO_ROOT)} and {os.path.relpath(out_md, REPO_ROOT)}")
 
 
 if __name__ == "__main__":
