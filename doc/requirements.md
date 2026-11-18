@@ -2,12 +2,12 @@
 
 ## Product Statement
 
-DitDahE1 is a tiny two-stage RV32EC core for low-resource embedded systems.
+DitDahE1 is a two-stage RV32E core for low-resource embedded systems.
 
 ## Architectural Scope
 
-- Base ISA: RV32EC.
-- Control profile: RV32EC with `Zicsr` and a minimal machine-mode privileged
+- RV32E is the base ISA. Compressed instructions default on. Zba, Zmmul and Zifencei default off.
+- The control profile implements `Zicsr` and a minimal machine-mode privileged
   subset for direct trap entry, `MRET`, WFI, and machine software, timer, and
   external interrupts.
 - XLEN: 32.
@@ -17,7 +17,7 @@ DitDahE1 is a tiny two-stage RV32EC core for low-resource embedded systems.
 - Unsupported extensions are illegal.
 - Instruction memory is little-endian.
 - Data memory is little-endian.
-- With the C extension enabled, instruction alignment is 16 bits.
+- Instruction alignment is 32 bits without C and 16 bits with C.
 
 ## Pipeline Model
 

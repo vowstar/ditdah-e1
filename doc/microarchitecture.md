@@ -4,7 +4,7 @@
 
 ## Overview
 
-DitDahE1 is a two-stage in-order RV32EC core:
+DitDahE1 implements RV32E in two in-order stages. Compressed fetch and decode are optional.
 
 - IF: instruction fetch and instruction-buffer maintenance.
 - EX/WB: decode, execute, memory access, trap decision, and register writeback.
@@ -52,8 +52,9 @@ sharing one external memory master.
 
 ## IF Stage
 
-Instruction memory is byte addressed and little-endian. Because RV32EC includes
-compressed instructions, instruction alignment is 16 bits.
+Instruction memory is byte addressed and little-endian. With C disabled, taken
+branches and jumps require a four-byte-aligned target. With C enabled,
+instructions can start at either halfword.
 
 The IF stage fetches aligned 32-bit words through the shared AXI read channel:
 
@@ -77,16 +78,23 @@ architectural commit.
 The stage performs:
 
 - RV32E decode.
-- RV32EC compressed decompression into the same internal operation format.
-- ALU and branch decisions.
+- Optional compressed instruction decode.
+- ALU and branch decisions, with optional Zba shift-and-add addressing.
+- Optional Zmmul with one, two, or four multiplier bits per cycle.
 - Load/store request generation and response handling.
 - Register writeback.
 - Trap detection.
 
-Taken branches and jumps flush any sequential instruction fetched after the
-branch PC. The first implementation does not prefetch beyond the current
-instruction, so a redirect updates `pc` before the next AXI fetch request is
-issued.
+By default each fetch waits for the previous transaction. `--prefetch-window-bits N`
+allows sequential reads in the aligned 2^N-byte region containing the reset
+vector. This region must hold side-effect-free executable memory. The core
+can have two AXI reads outstanding and expects responses in order. With C it
+can reuse the upper halfword of a fetched word. Stores invalidate matching
+instruction data. With Zifencei enabled, FENCE.I discards buffered instruction data.
+
+With Zmmul enabled, `--fast-small-multiply` adds a 9-bit unsigned fast path
+for MUL. All four multiply instructions retain full 32-bit operand semantics.
+`--isolate-multiply-operands` holds the multiplier inputs at zero during unrelated instructions.
 
 ## Register File
 
@@ -170,6 +178,7 @@ core-clock Debug Module. Halt waits for fetch or memory completion; abstract
 memory commands reuse the shared AXI-Lite port only while halted. DCSR/DPC,
 machine-mode EBREAK, resume, reset, halt-on-reset, and one-instruction step are
 implemented. `enableJtag=false` elaborates none of this state or interface.
+TDO changes on falling TCK edges. `jtag_tdoEnable` enables the pad driver during IR and DR shifts.
 
 ## Trace Equivalence Boundary
 

@@ -19,8 +19,14 @@ The following RV32E instructions are in scope:
 | Privileged system | `MRET`, `WFI` |
 
 `FENCE` is treated as a no-op ordering instruction for the initial single-core,
-strongly ordered integration model. `FENCE.I` remains illegal. CSR instructions
+strongly ordered integration model. CSR instructions
 are the standard `Zicsr` read-modify-write operations listed above.
+
+| Optional extension | Instructions |
+| --- | --- |
+| Zba | `SH1ADD`, `SH2ADD`, `SH3ADD` |
+| Zmmul | `MUL`, `MULH`, `MULHSU`, `MULHU` |
+| Zifencei | `FENCE.I` |
 
 ## Control Profile
 
@@ -33,7 +39,8 @@ implementation:
   `mcause`, `mtval`, `mvendorid`, `marchid`, `mimpid`, `mhartid`, and `misa`.
 - Machine software, timer, and external interrupt inputs are supported.
 - WFI is a privileged `SYSTEM` instruction, not a `Zicsr` CSR instruction.
-- Vectored traps, delegation, U-mode, S-mode, debug, PMP, and MMU behavior are
+- The optional JTAG interface provides single-hart Debug Mode.
+- Vectored traps, delegation, U-mode, S-mode, PMP, and MMU behavior are
   out of scope.
 
 ## RV32E Register Legality
@@ -49,7 +56,7 @@ not use `rs1` or `rs2`.
 
 ## RV32EC Compressed Instructions
 
-The following RV32EC compressed integer instruction groups are in scope:
+Enabling C adds these compressed integer instruction groups.
 
 | Group | Instructions |
 | --- | --- |

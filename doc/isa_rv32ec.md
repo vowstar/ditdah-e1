@@ -1,8 +1,8 @@
-# RV32EC ISA Scope
+# RV32E ISA Scope
 
 ## Base Rules
 
-DitDahE1 implements a small RV32EC base plus the project control profile:
+DitDahE1 implements RV32E with optional compressed instructions.
 
 - XLEN is 32.
 - Integer register addresses are 4 bits wide.
@@ -16,7 +16,7 @@ Any instruction encoding that names x16 through x31 is illegal for this core.
 
 ## RV32E Instruction Classes
 
-The planned RV32E classes are:
+The core implements these RV32E instruction classes.
 
 - `LUI`
 - `AUIPC`
@@ -30,7 +30,7 @@ The planned RV32E classes are:
 - `FENCE` as a no-op ordering instruction for the initial simple memory system
 - `ECALL` and `EBREAK` as traps
 
-`FENCE.I` remains out of scope and traps as an illegal instruction.
+Zifencei enables `FENCE.I`. Zba enables `SH1ADD`, `SH2ADD` and `SH3ADD`. Zmmul enables `MUL`, `MULH`, `MULHSU` and `MULHU`. Each extension defaults off.
 
 ## Zicsr and Privileged Control Scope
 
@@ -66,7 +66,7 @@ The supported machine CSRs are:
 - `misa`
 
 The core supports only M-mode. `mtvec` direct mode is implemented. Vectored
-mode, delegation, U-mode, S-mode, debug mode, PMP, and CLIC are out of scope.
+mode, delegation, U-mode, S-mode, PMP, and CLIC are out of scope. Enabling JTAG adds single-hart Debug Mode.
 Machine software, timer, and external interrupt pins are level-sensitive. The
 local priority order is external, then software, then timer.
 
@@ -75,7 +75,7 @@ local priority order is external, then software, then timer.
 The RVC decoder must only emit legal RV32E architectural register references.
 Compressed forms that imply or encode x16 through x31 are illegal.
 
-The required RV32EC compressed integer subset is:
+Enabling C adds these compressed instructions.
 
 - `C.NOP`, `C.ADDI`, `C.LI`, `C.LUI`, `C.ADDI16SP`, and `C.ADDI4SPN`.
 - `C.LW`, `C.SW`, `C.LWSP`, and `C.SWSP`.
