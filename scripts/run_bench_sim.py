@@ -162,7 +162,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--bench-dir", type=Path, default=REPO_ROOT / "result" / "bench-score")
     p.add_argument("--netlist", type=Path, default=REPO_ROOT / "result" / "DitDahE1.sv")
-    p.add_argument("--isa", choices=BENCHMARK_ISAS, default="rv32ec")
+    p.add_argument("--isa", choices=BENCHMARK_ISAS, default="rv32e_zba_zmmul")
     p.add_argument("--omit-frame-pointer", action="store_true")
     p.add_argument("--pipelined-reads", action="store_true", help="accept a new address on the preceding read response")
     p.add_argument("--coremark-iterations", type=int, default=200)

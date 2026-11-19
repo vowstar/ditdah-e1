@@ -109,7 +109,7 @@ FULL_STEPS = [
     Step(
         "compliance_signatures",
         ["make", "verify-compliance"],
-        "Run the shipping default against the Sail reference signatures.",
+        "Run the compressed profile against the RV32EC Sail signatures.",
     ),
     Step(
         "rtl_cocotb_full",
@@ -119,7 +119,9 @@ FULL_STEPS = [
 ]
 
 SIGNOFF_STEPS = [
-    Step("default_profile", ["make", "test-default"], "Check compressed execution, multiply and prefetch on the shipping default."),
+    Step("default_profile", ["make", "test-default"], "Check the default instruction alignment, traps and multiply."),
+    Step("compressed_profile", ["make", "test-compressed"], "Check compressed execution, multiply and prefetch."),
+    Step("full_profile", ["make", "test-full"], "Check compressed execution and FENCE.I with debug enabled."),
     Step("minimal_profile", ["make", "test-rv32e"], "Check the shipping minimal profile and illegal encodings."),
     Step(
         "optional_fetch_and_arithmetic",

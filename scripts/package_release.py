@@ -60,6 +60,11 @@ VARIANTS = (
         ("fpga/DitDahE1Gpr.v", "fpga/ditdah_e1.sdc"),
     ),
     Variant("minimal", "minimal", "-minimal", False, ("DitDahE1.sv",)),
+    Variant("compressed", "compressed", "-compressed", False, ("DitDahE1.sv",)),
+    Variant(
+        "full", "full", "-full", True,
+        ("DitDahE1.sv", "DitDahE1DebugModule.sv", "DitDahE1JtagDtm.sv"),
+    ),
 )
 
 
@@ -137,10 +142,10 @@ def audit_variant(input_dir, variant):
         "enableTrace": False,
         "enableSva": False,
         "enableJtag": variant.enable_jtag,
-        "enableC": standard,
+        "enableC": variant.name in ("compressed", "full"),
         "enableZba": standard,
         "enableZmmul": standard,
-        "enableZifencei": False,
+        "enableZifencei": variant.name == "full",
         "fastSmallMultiply": standard,
         "isolateMultiplyOperands": standard,
         "multiplyBitsPerCycle": 4 if standard else 1,
@@ -411,7 +416,7 @@ def git_output(*args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Package standard, JTAG, and FPGA RTL release archives"
+        description="Package production RTL release profiles"
     )
     parser.add_argument("--tag", required=True)
     parser.add_argument("--commit")

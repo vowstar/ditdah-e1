@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Huang Rui <vowstar@gmail.com>
 # SPDX-License-Identifier: MIT
 
+import json
 import logging
 import os
 import shutil
@@ -434,7 +435,12 @@ async def test_jtag_debug_flow(dut):
     await clear_abstract_error(dtm, 5)
 
     await abstract_write_register(dtm, CSR_DPC, 0x43)
-    expected_dpc = 0x42 if os.environ.get("JTAG_TEST_C", "1") == "1" else 0x40
+    if "JTAG_TEST_C" in os.environ:
+        compressed = os.environ["JTAG_TEST_C"] == "1"
+    else:
+        config_path = Path(os.environ["VERILOG_DIR"]) / "ditdah_e1_config.json"
+        compressed = json.loads(config_path.read_text()).get("enableC", True)
+    expected_dpc = 0x42 if compressed else 0x40
     assert await abstract_read_register(dtm, CSR_DPC) == expected_dpc
     await abstract_write_register(dtm, CSR_DPC, 0x40)
     await abstract_write_register(dtm, CSR_MSTATUS, 1 << 3)

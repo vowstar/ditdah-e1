@@ -74,7 +74,6 @@
           prefetchWindowBits = 0;
         };
         defaultIsa = minimalIsa // {
-          enableC = true;
           enableZba = true;
           enableZmmul = true;
           multiplyBitsPerCycle = 4;
@@ -320,7 +319,7 @@
 Usage: build-ditdah-e1 [--minimal] [--c|--no-c] [--zifencei] [--zba|--no-zba] [--zmmul|--no-zmmul] [--multiply-bits 1|2|4] [--fast-small-multiply|--no-fast-small-multiply] [--isolate-multiply-operands|--no-isolate-multiply-operands] [--prefetch-window-bits N] [--trace|--no-trace] [--jtag|--no-jtag] [--jtag-idcode ID]
 
 Generate DitDahE1 Verilog into OUTPUT_DIR, defaulting to ./result.
-Default: Zca, Zba, Zmmul and a 64 KiB prefetch window. --minimal disables all
+Default: Zba, Zmmul and a 64 KiB prefetch window. Use --c for Zca. --minimal disables all
 optional ISA and fetch features. Individual flags override the selected profile.
 Use --prefetch-window-bits 0 to disable prefetch on its own.
 The default production build omits architectural trace ports. Use --trace
@@ -372,12 +371,15 @@ EOF
           echo "ENABLE_TRACE: $ENABLE_TRACE"
           echo "ENABLE_JTAG: $ENABLE_JTAG"
 
-          rm -f DitDahE1*.mlirbc
+          source_dir=$(realpath ditdah_e1/src)
+          work_dir=$(mktemp -d)
+          trap 'rm -rf "$work_dir"' EXIT
+          cd "$work_dir"
 
           scala-cli run \
             ${commonScalaArgs} \
             --main-class com.vowstar.ditdah.e1.DitDahE1Module \
-            ditdah_e1/src \
+            --workspace "$work_dir/scala" "$source_dir" \
             -- config "$OUTPUT_DIR/ditdah_e1_config.json" \
             --resetVector ${toString ditdah_e1Config.resetVector} \
             --enableTrace "$ENABLE_TRACE" \
@@ -396,7 +398,7 @@ EOF
           scala-cli run \
             ${commonScalaArgs} \
             --main-class com.vowstar.ditdah.e1.DitDahE1Module \
-            ditdah_e1/src \
+            --workspace "$work_dir/scala" "$source_dir" \
             -- design "$OUTPUT_DIR/ditdah_e1_config.json"
 
           MLIRBC_FILE=$(ls DitDahE1.mlirbc 2>/dev/null | head -1)
@@ -597,7 +599,7 @@ EOF
           ];
           text = ''
             build-ditdah-e1 --no-trace
-            python3 scripts/run_bench_sim.py --isa rv32ec_zba_zmmul --pipelined-reads "$@"
+            python3 scripts/run_bench_sim.py --isa rv32e_zba_zmmul --pipelined-reads "$@"
           '';
         };
 
@@ -662,6 +664,18 @@ EOF
           name = "jtag";
           config.enableJtag = true;
         };
+        rtlCompressed = mkRtlPackage {
+          name = "compressed";
+          config.enableC = true;
+        };
+        rtlFull = mkRtlPackage {
+          name = "full";
+          config = {
+            enableC = true;
+            enableZifencei = true;
+            enableJtag = true;
+          };
+        };
         rtlMinimal = mkRtlPackage {
           name = "minimal";
           config = minimalIsa;
@@ -670,6 +684,8 @@ EOF
           { name = "standard"; path = rtlStandard; }
           { name = "jtag"; path = rtlJtag; }
           { name = "minimal"; path = rtlMinimal; }
+          { name = "compressed"; path = rtlCompressed; }
+          { name = "full"; path = rtlFull; }
         ];
       in
       {
@@ -678,6 +694,8 @@ EOF
           rtl = rtlStandard;
           rtl-jtag = rtlJtag;
           rtl-minimal = rtlMinimal;
+          rtl-compressed = rtlCompressed;
+          rtl-full = rtlFull;
           release-inputs = releaseInputs;
         };
 

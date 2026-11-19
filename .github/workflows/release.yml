@@ -89,11 +89,13 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           cd result/release
-          test "$(find . -maxdepth 1 -name '*.tar.gz' -type f | wc -l)" -eq 4
+          test "$(find . -maxdepth 1 -name '*.tar.gz' -type f | wc -l)" -eq 6
           test -f "ditdah-e1-${RELEASE_TAG}.tar.gz"
           test -f "ditdah-e1-${RELEASE_TAG}-jtag.tar.gz"
           test -f "ditdah-e1-${RELEASE_TAG}-fpga.tar.gz"
           test -f "ditdah-e1-${RELEASE_TAG}-minimal.tar.gz"
+          test -f "ditdah-e1-${RELEASE_TAG}-compressed.tar.gz"
+          test -f "ditdah-e1-${RELEASE_TAG}-full.tar.gz"
           sha256sum --check SHA256SUMS
 
       - name: Create Draft Release
@@ -101,20 +103,22 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
           RELEASE_NOTES: |
-            Production SystemVerilog, one tarball per integration profile.
+            Choose the unsuffixed archive for the default RV32E core with Zba, Zmmul and a 64 KiB instruction-prefetch window. Compile firmware with `-march=rv32e_zicsr_zba_zmmul -mabi=ilp32e`. Users upgrading firmware built for the v1.6.0 standard core should choose the compressed or full archive.
 
-            | Download | Profile | JTAG debug | Trace |
-            |---|---|---|---|
-            | `ditdah-e1-${{ github.ref_name }}.tar.gz` | Default RV32E core | Disabled | Disabled |
-            | `ditdah-e1-${{ github.ref_name }}-minimal.tar.gz` | Minimal RV32E with Zicsr. Optional ISA extensions and instruction prefetch disabled. | Disabled | Disabled |
-            | `ditdah-e1-${{ github.ref_name }}-jtag.tar.gz` | Default core with JTAG debug | Enabled | Disabled |
-            | `ditdah-e1-${{ github.ref_name }}-fpga.tar.gz` | Default core with Anlogic EG4 distributed-RAM register file | Disabled | Disabled |
+            | Download | Features beyond RV32E + Zicsr |
+            |---|---|
+            | `ditdah-e1-${{ github.ref_name }}.tar.gz` | Default: Zba, Zmmul, prefetch |
+            | `ditdah-e1-${{ github.ref_name }}-compressed.tar.gz` | Default plus C (Zca) for smaller firmware |
+            | `ditdah-e1-${{ github.ref_name }}-full.tar.gz` | Default plus C, Zifencei (FENCE.I) and JTAG debug |
+            | `ditdah-e1-${{ github.ref_name }}-minimal.tar.gz` | Demand fetch only |
+            | `ditdah-e1-${{ github.ref_name }}-jtag.tar.gz` | Default plus JTAG debug |
+            | `ditdah-e1-${{ github.ref_name }}-fpga.tar.gz` | Default with an Anlogic EG4 register-file option |
 
-            Default, JTAG and EG4 enable compressed instructions (Zca), Zba, Zmmul and instruction prefetch. Map the aligned 64 KiB reset window to side-effect-free executable memory. All four profiles use the ilp32e ABI and retain machine-mode traps and interrupts.
+            Use `-mabi=ilp32e` for every profile. For compressed use `-march=rv32ec_zicsr_zba_zmmul`. For full use `-march=rv32ec_zicsr_zifencei_zba_zmmul`. For minimal use `-march=rv32e_zicsr`. JTAG and EG4 use the default compiler flags.
 
-            Zifencei is also available as a generator option in this release.
+            On the same CoreMark test with zero memory wait states, uncompressed firmware took 665,163 cycles on both cores and compressed firmware took 727,703. With two read and write wait states, compressed firmware took 1,489,816 cycles versus 1,684,171 uncompressed.
 
-            Use `SHA256SUMS` to verify all downloads. The default JTAG IDCODE is an integration placeholder.
+            Map the aligned 64 KiB window containing the reset vector to side-effect-free executable memory when prefetch is enabled. All six archives omit verification trace and assertions. Set a device-specific JTAG IDCODE when integrating debug. Verify downloads with `SHA256SUMS`.
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             echo "release already exists: $RELEASE_TAG" >&2
@@ -125,6 +129,8 @@ jobs:
             "result/release/ditdah-e1-${RELEASE_TAG}-jtag.tar.gz" \
             "result/release/ditdah-e1-${RELEASE_TAG}-fpga.tar.gz" \
             "result/release/ditdah-e1-${RELEASE_TAG}-minimal.tar.gz" \
+            "result/release/ditdah-e1-${RELEASE_TAG}-compressed.tar.gz" \
+            "result/release/ditdah-e1-${RELEASE_TAG}-full.tar.gz" \
             result/release/SHA256SUMS \
             --draft \
             --verify-tag \
@@ -137,7 +143,7 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           asset_count=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets | length')
-          test "$asset_count" -eq 5
+          test "$asset_count" -eq 7
           while read -r digest filename; do
             remote=$(gh release view "$RELEASE_TAG" --json assets \
               --jq ".assets[] | select(.name == \"$filename\") | .digest")

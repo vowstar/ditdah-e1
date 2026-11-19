@@ -82,7 +82,7 @@ bench:
 	python3 scripts/build_benchmarks.py --out-dir result/bench
 
 bench-score: build
-	python3 scripts/run_bench_sim.py --isa rv32ec_zba_zmmul --pipelined-reads \
+	python3 scripts/run_bench_sim.py --isa rv32e_zba_zmmul --pipelined-reads \
 		--coremark-iterations $(BENCH_COREMARK_ITERATIONS) \
 		--dhrystone-runs $(BENCH_DHRYSTONE_RUNS) \
 		--frequency-mhz $(BENCH_FREQ_MHZ)
@@ -116,7 +116,7 @@ verify-riscv-dv: build-rv32ec-trace
 	python3 scripts/run_riscv_dv.py --config test/riscv_dv/ditdah_e1_rv32ec.yaml
 
 verify-compliance:
-	OUTPUT_DIR=result/compliance/rtl build-ditdah-e1 --trace
+	OUTPUT_DIR=result/compliance/rtl build-ditdah-e1 --c --trace
 	python3 scripts/run_compliance.py --rtl-dir result/compliance/rtl
 
 signoff-coverage: build-rv32ec-trace
@@ -141,21 +141,29 @@ test-jtag-prefetch:
 		VERILOG_DIR=$(abspath result/$@) SIM_BUILD=$(abspath result/$@/sim_build) \
 		COCOTB_RESULTS_FILE=$(abspath result/$@/results.xml)
 
-.PHONY: test-default test-rv32e test-zifencei test-zmmul test-prefetch
-test-default:
-	OUTPUT_DIR=result/$@ build-ditdah-e1 --trace
-	$(MAKE) -C test/test_ditdah_e1 MODULE=test_default,test_zmmul \
+.PHONY: test-default test-compressed test-rv32e test-zifencei test-zmmul test-prefetch
+test-default: PROFILE_TESTS = test_rv32e,test_zmmul,test_fetch_window,test_fence_i
+test-compressed: PROFILE_OPTIONS = --c
+test-compressed: PROFILE_TESTS = test_compressed,test_zmmul,test_fetch_window
+.PHONY: test-full
+test-full: PROFILE_OPTIONS = --c --zifencei --jtag
+test-full: PROFILE_TESTS = test_compressed,test_zmmul,test_fetch_window,test_fence_i
+test-full: export TEST_ZIFENCEI = 1
+test-full: export TEST_JTAG_PORTS = 1
+test-default test-compressed test-full:
+	OUTPUT_DIR=result/$@ build-ditdah-e1 --trace $(PROFILE_OPTIONS)
+	$(MAKE) -C test/test_ditdah_e1 MODULE=$(PROFILE_TESTS) \
 		VERILOG_DIR=$(abspath result/$@) SIM_BUILD=$(abspath result/$@/sim_build) \
 		COCOTB_RESULTS_FILE=$(abspath result/$@/results.xml)
 
 test-prefetch: ISA_OPTIONS = --zba --prefetch-window-bits 6 --zmmul --fast-small-multiply --isolate-multiply-operands --zifencei
-test-prefetch: ISA_TEST = test_prefetch,test_zmmul,test_rv32e
+test-prefetch: ISA_TEST = test_prefetch,test_zmmul,test_rv32e,test_fence_i
 test-prefetch: export TEST_ZIFENCEI = 1
 MULTIPLY_BITS ?= 1
 test-zmmul: ISA_OPTIONS = --zmmul --multiply-bits $(MULTIPLY_BITS)
 test-zmmul: ISA_TEST = test_zmmul
 test-rv32e: export TEST_MINIMAL = 1
-test-rv32e test-zifencei: ISA_TEST = test_rv32e
+test-rv32e test-zifencei: ISA_TEST = test_rv32e,test_fence_i
 test-zifencei: ISA_OPTIONS = --zifencei
 test-zifencei: export TEST_ZIFENCEI = 1
 test-rv32e test-zifencei test-zmmul test-prefetch:

@@ -62,7 +62,8 @@ def test_release_workflow_packages_and_publishes_rtl_variants():
     assert "--verify" in build_run
     assert "ditdah-e1-${RELEASE_TAG}.tar.gz" in publish_run
     assert "ditdah-e1-${RELEASE_TAG}-jtag.tar.gz" in publish_run
-    assert "ditdah-e1-${RELEASE_TAG}-minimal.tar.gz" in publish_run
+    for suffix in ("minimal", "compressed", "full"):
+        assert f"ditdah-e1-${{RELEASE_TAG}}-{suffix}.tar.gz" in publish_run
     assert "gh release create" in publish_run
     assert "--draft" in publish_run
     assert "--verify-tag" in publish_run
@@ -76,7 +77,7 @@ def test_release_workflow_packages_and_publishes_rtl_variants():
     release_notes = create_step["env"]["RELEASE_NOTES"]
     assert "\n" in release_notes
     assert "\\n" not in release_notes
-    assert "| Download | Profile | JTAG debug | Trace |" in release_notes
+    assert "| Download | Features beyond RV32E + Zicsr |" in release_notes
     assert "ditdah-e1-${{ github.ref_name }}.tar.gz" in release_notes
     assert "ditdah-e1-${{ github.ref_name }}-jtag.tar.gz" in release_notes
     assert '--notes "$RELEASE_NOTES"' in create_step["run"]

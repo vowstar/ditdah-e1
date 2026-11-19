@@ -25,10 +25,10 @@ def write_variant(root, name, enable_jtag, trace=False, leaked_path=False):
         "enableJtag": enable_jtag,
         "enableTrace": trace,
         "enableSva": False,
-        "enableC": name != "minimal",
+        "enableC": name in ("compressed", "full"),
         "enableZba": name != "minimal",
         "enableZmmul": name != "minimal",
-        "enableZifencei": False,
+        "enableZifencei": name == "full",
         "fastSmallMultiply": name != "minimal",
         "isolateMultiplyOperands": name != "minimal",
         "multiplyBitsPerCycle": 1 if name == "minimal" else 4,
@@ -58,6 +58,8 @@ def release_fixture(tmp_path):
     write_variant(input_dir, "standard", False)
     write_variant(input_dir, "jtag", True)
     write_variant(input_dir, "minimal", False)
+    write_variant(input_dir, "compressed", False)
+    write_variant(input_dir, "full", True)
     license_path = tmp_path / "LICENSE"
     license_path.write_text("MIT License\n", encoding="utf-8")
     return input_dir, license_path
@@ -75,7 +77,7 @@ def package(tmp_path, output_name="release"):
     )
 
 
-def test_package_release_builds_four_named_archives(tmp_path):
+def test_package_release_builds_six_named_archives(tmp_path):
     archives, checksum_path = package(tmp_path)
 
     assert [path.name for path in archives] == [
@@ -83,6 +85,8 @@ def test_package_release_builds_four_named_archives(tmp_path):
         "ditdah-e1-v1.2.3-jtag.tar.gz",
         "ditdah-e1-v1.2.3-fpga.tar.gz",
         "ditdah-e1-v1.2.3-minimal.tar.gz",
+        "ditdah-e1-v1.2.3-compressed.tar.gz",
+        "ditdah-e1-v1.2.3-full.tar.gz",
     ]
     checksum_names = [
         line.split()[1]
@@ -93,6 +97,8 @@ def test_package_release_builds_four_named_archives(tmp_path):
         "ditdah-e1-v1.2.3-jtag.tar.gz",
         "ditdah-e1-v1.2.3-fpga.tar.gz",
         "ditdah-e1-v1.2.3-minimal.tar.gz",
+        "ditdah-e1-v1.2.3-compressed.tar.gz",
+        "ditdah-e1-v1.2.3-full.tar.gz",
     ]
 
     with tarfile.open(archives[0], "r:gz") as archive:
@@ -233,7 +239,10 @@ def test_failed_repackage_preserves_previous_assets(tmp_path):
 
 
 @pytest.mark.parametrize("name,key,value", [
-    ("standard", "enableC", False),
+    ("standard", "enableC", True),
+    ("compressed", "enableC", False),
+    ("full", "enableZifencei", False),
+    ("full", "enableJtag", False),
     ("minimal", "prefetchWindowBits", 16),
     ("jtag", "enableZmmul", False),
 ])

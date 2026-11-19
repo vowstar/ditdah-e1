@@ -31,14 +31,14 @@ make package-release RELEASE_TAG=vX.Y.Z  # package trace-free RTL assets
 ```
 
 `build-ditdah-e1` is the default production build and omits architectural
-`trace_*` and direct `rvfi_*` top-level ports. The compliance gate uses the
-default with trace enabled. The RV32EC ISS and single-read formal harnesses
+`trace_*` and direct `rvfi_*` top-level ports. The RV32EC compliance gate uses the
+compressed profile with trace enabled. The RV32EC ISS and single-read formal harnesses
 use `--minimal --c --trace`. JTAG ports and logic require `enableJtag=true`.
 
 ## Pass Criteria
 
 - Python reference model and ISA regression tests pass.
-- Signoff exercises the default and minimal release profiles on RTL.
+- Signoff exercises the default, compressed, full and minimal release profiles on RTL.
 - Generated Verilog compiles.
 - Directed cocotb tests cover reset/fetch, aligned and straddled fetch, RV32E
   ALU register/immediate, branches, jumps, RVC, aligned and misaligned
@@ -87,14 +87,16 @@ use `--minimal --c --trace`. JTAG ports and logic require `enableJtag=true`.
 | `result/verification/open_gaps.{json,md}` | gap audit |
 | `result/verification/{trace_config,jtag_ppa}.{json,md}` | configuration and PPA proxy audits |
 | `result/verification/completion_audit.{json,md}` | aggregated checklist |
-| `result/release/` | standard, minimal, JTAG and EG4 release archives |
+| `result/release/` | release archives and checksums |
 
 ## Benchmarks
 
-Scored CoreMark and Dhrystone images target `rv32ec_zba_zmmul/ilp32e` on the shared AXI-Lite RAM. `make bench-score BENCH_FREQ_MHZ=100`
-records local timing-marker cycle counts at that frequency. It proves
-functional completion on RTL, not certified scores, post-synthesis timing, or
-long-duration stability.
+To reproduce the default measurement, run `make build` followed by the command below. Repeat with `build-ditdah-e1 --c`, `--isa rv32ec_zba_zmmul` and a separate `--bench-dir` for compressed firmware.
+
+```sh
+python3 scripts/run_bench_sim.py --isa rv32e_zba_zmmul --pipelined-reads --omit-frame-pointer \
+  --coremark-iterations 1 --dhrystone-runs 100 --frequency-mhz 500 --bench-dir result/bench-default
+```
 
 ## Local SVA
 

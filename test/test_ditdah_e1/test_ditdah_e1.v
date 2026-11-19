@@ -88,6 +88,14 @@ module test_ditdah_e1;
     end
 
     DitDahE1 u_ditdah_e1 (
+`ifdef E1_TEST_JTAG
+        .jtag_tck(1'b0),
+        .jtag_tms(1'b1),
+        .jtag_tdi(1'b0),
+        .jtag_trstN(1'b0),
+        .jtag_tdo(),
+        .jtag_tdoEnable(),
+`endif
         .clock          (clk),
         .reset          (reset),
         .axi_aw_valid    (axi_aw_valid),
