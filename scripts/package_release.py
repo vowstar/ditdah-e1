@@ -59,7 +59,7 @@ VARIANTS = (
         ("DitDahE1.sv",),
         ("fpga/DitDahE1Gpr.v", "fpga/ditdah_e1.sdc"),
     ),
-    Variant("mul-prefetch", "mul-prefetch", "-mul-prefetch", False, ("DitDahE1.sv",)),
+    Variant("minimal", "minimal", "-minimal", False, ("DitDahE1.sv",)),
 )
 
 
@@ -132,9 +132,22 @@ def audit_variant(input_dir, variant):
 
     config_path = variant_dir / "ditdah_e1_config.json"
     config = read_json(config_path)
-    required_config = {"enableTrace": False, "enableJtag": variant.enable_jtag}
+    standard = variant.name != "minimal"
+    required_config = {
+        "enableTrace": False,
+        "enableSva": False,
+        "enableJtag": variant.enable_jtag,
+        "enableC": standard,
+        "enableZba": standard,
+        "enableZmmul": standard,
+        "enableZifencei": False,
+        "fastSmallMultiply": standard,
+        "isolateMultiplyOperands": standard,
+        "multiplyBitsPerCycle": 4 if standard else 1,
+        "prefetchWindowBits": 16 if standard else 0,
+    }
     for key, expected in required_config.items():
-        if config.get(key) != expected:
+        if type(config.get(key)) is not type(expected) or config[key] != expected:
             raise ReleaseError(
                 f"{variant.directory} config {key} is {config.get(key)!r}, expected {expected!r}"
             )

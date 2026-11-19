@@ -63,7 +63,36 @@
             in prev.mkMavenRepository (pinned // args);
         });
 
-        ditdah_e1Config = {
+        minimalIsa = {
+          enableC = false;
+          enableZba = false;
+          enableZmmul = false;
+          enableZifencei = false;
+          multiplyBitsPerCycle = 1;
+          fastSmallMultiply = false;
+          isolateMultiplyOperands = false;
+          prefetchWindowBits = 0;
+        };
+        defaultIsa = minimalIsa // {
+          enableC = true;
+          enableZba = true;
+          enableZmmul = true;
+          multiplyBitsPerCycle = 4;
+          fastSmallMultiply = true;
+          isolateMultiplyOperands = true;
+          prefetchWindowBits = 16;
+        };
+        isaShell = isa: ''
+          ENABLE_C=${pkgs.lib.boolToString isa.enableC}
+          ENABLE_ZBA=${pkgs.lib.boolToString isa.enableZba}
+          ENABLE_ZMMUL=${pkgs.lib.boolToString isa.enableZmmul}
+          ENABLE_ZIFENCEI=${pkgs.lib.boolToString isa.enableZifencei}
+          MULTIPLY_BITS=${toString isa.multiplyBitsPerCycle}
+          FAST_SMALL_MULTIPLY=${pkgs.lib.boolToString isa.fastSmallMultiply}
+          ISOLATE_MULTIPLY=${pkgs.lib.boolToString isa.isolateMultiplyOperands}
+          PREFETCH_BITS=${toString isa.prefetchWindowBits}
+        '';
+        ditdah_e1Config = defaultIsa // {
           resetVector = 0;
           enableTrace = false;
           enableSva = false;
@@ -207,20 +236,24 @@
           JAVA_LIBRARY_PATH="${javaLibraryPath}"
           OUTPUT_DIR="''${OUTPUT_DIR:-$PWD/result}"
           ENABLE_TRACE="''${DITDAH_E1_ENABLE_TRACE:-${if ditdah_e1Config.enableTrace then "true" else "false"}}"
-          ENABLE_C=true
-          ENABLE_ZIFENCEI=false
-          ENABLE_ZMMUL=false
-          MULTIPLY_BITS=1
-          FAST_SMALL_MULTIPLY=false
-          ISOLATE_MULTIPLY=false
-          PREFETCH_BITS=0
-          ENABLE_ZBA=false
+          ${isaShell defaultIsa}
+          for option in "$@"; do
+            if [[ "$option" == --minimal ]]; then
+              ${isaShell minimalIsa}
+              break
+            fi
+          done
           ENABLE_JTAG="''${DITDAH_E1_ENABLE_JTAG:-${if ditdah_e1Config.enableJtag then "true" else "false"}}"
           JTAG_IDCODE="${toString ditdah_e1Config.jtagIdcode}"
           ENABLE_SVA="''${DITDAH_E1_ENABLE_SVA:-${if ditdah_e1Config.enableSva then "true" else "false"}}"
 
           while [ "$#" -gt 0 ]; do
             case "$1" in
+              --minimal) ;;
+              --no-zba) ENABLE_ZBA=false ;;
+              --no-zmmul) ENABLE_ZMMUL=false ;;
+              --no-fast-small-multiply) FAST_SMALL_MULTIPLY=false ;;
+              --no-isolate-multiply-operands) ISOLATE_MULTIPLY=false ;;
               --c)
                 ENABLE_C=true
                 ;;
@@ -284,9 +317,12 @@
                 ;;
               --help)
                 cat <<'EOF'
-Usage: build-ditdah-e1 [--c|--no-c] [--zifencei] [--zba] [--zmmul] [--multiply-bits 1|2|4] [--fast-small-multiply] [--isolate-multiply-operands] [--prefetch-window-bits N] [--trace|--no-trace] [--jtag|--no-jtag] [--jtag-idcode ID]
+Usage: build-ditdah-e1 [--minimal] [--c|--no-c] [--zifencei] [--zba|--no-zba] [--zmmul|--no-zmmul] [--multiply-bits 1|2|4] [--fast-small-multiply|--no-fast-small-multiply] [--isolate-multiply-operands|--no-isolate-multiply-operands] [--prefetch-window-bits N] [--trace|--no-trace] [--jtag|--no-jtag] [--jtag-idcode ID]
 
 Generate DitDahE1 Verilog into OUTPUT_DIR, defaulting to ./result.
+Default: Zca, Zba, Zmmul and a 64 KiB prefetch window. --minimal disables all
+optional ISA and fetch features. Individual flags override the selected profile.
+Use --prefetch-window-bits 0 to disable prefetch on its own.
 The default production build omits architectural trace ports. Use --trace
 or DITDAH_E1_ENABLE_TRACE=1 for RTL simulation, trace comparison, and RVFI.
 The default build omits JTAG ports and debug logic. Use --jtag or
@@ -561,24 +597,13 @@ EOF
           ];
           text = ''
             build-ditdah-e1 --no-trace
-            python3 scripts/run_bench_sim.py "$@"
+            python3 scripts/run_bench_sim.py --isa rv32ec_zba_zmmul --pipelined-reads "$@"
           '';
         };
 
         mkRtlPackage = { name, config ? { } }:
           let
-            releaseConfig = ditdah_e1Config // {
-              enableTrace = false;
-              enableSva = false;
-              enableC = true;
-              enableZba = false;
-              enableZmmul = false;
-              enableZifencei = false;
-              multiplyBitsPerCycle = 1;
-              fastSmallMultiply = false;
-              isolateMultiplyOperands = false;
-              prefetchWindowBits = 0;
-            } // config;
+            releaseConfig = ditdah_e1Config // config;
           in
           pkgs.runCommand "ditdah-e1-verilog-${name}" {
             nativeBuildInputs = [
@@ -637,22 +662,14 @@ EOF
           name = "jtag";
           config.enableJtag = true;
         };
-        rtlMulPrefetch = mkRtlPackage {
-          name = "mul-prefetch";
-          config = {
-            enableC = false;
-            enableZba = true;
-            enableZmmul = true;
-            multiplyBitsPerCycle = 4;
-            fastSmallMultiply = true;
-            isolateMultiplyOperands = true;
-            prefetchWindowBits = 16;
-          };
+        rtlMinimal = mkRtlPackage {
+          name = "minimal";
+          config = minimalIsa;
         };
         releaseInputs = pkgs.linkFarm "ditdah-e1-release-inputs" [
           { name = "standard"; path = rtlStandard; }
           { name = "jtag"; path = rtlJtag; }
-          { name = "mul-prefetch"; path = rtlMulPrefetch; }
+          { name = "minimal"; path = rtlMinimal; }
         ];
       in
       {
@@ -660,6 +677,7 @@ EOF
           default = rtlStandard;
           rtl = rtlStandard;
           rtl-jtag = rtlJtag;
+          rtl-minimal = rtlMinimal;
           release-inputs = releaseInputs;
         };
 

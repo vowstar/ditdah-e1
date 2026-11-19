@@ -30,7 +30,7 @@ The core implements these RV32E instruction classes.
 - `FENCE` as a no-op ordering instruction for the initial simple memory system
 - `ECALL` and `EBREAK` as traps
 
-Zifencei enables `FENCE.I`. Zba enables `SH1ADD`, `SH2ADD` and `SH3ADD`. Zmmul enables `MUL`, `MULH`, `MULHSU` and `MULHU`. Each extension defaults off.
+Zifencei enables `FENCE.I`. Zba enables `SH1ADD`, `SH2ADD` and `SH3ADD`. Zmmul enables `MUL`, `MULH`, `MULHSU` and `MULHU`. The default enables Zba and Zmmul. Zifencei is opt-in.
 
 ## Zicsr and Privileged Control Scope
 

@@ -93,7 +93,7 @@ jobs:
           test -f "ditdah-e1-${RELEASE_TAG}.tar.gz"
           test -f "ditdah-e1-${RELEASE_TAG}-jtag.tar.gz"
           test -f "ditdah-e1-${RELEASE_TAG}-fpga.tar.gz"
-          test -f "ditdah-e1-${RELEASE_TAG}-mul-prefetch.tar.gz"
+          test -f "ditdah-e1-${RELEASE_TAG}-minimal.tar.gz"
           sha256sum --check SHA256SUMS
 
       - name: Create Draft Release
@@ -105,12 +105,12 @@ jobs:
 
             | Download | Profile | JTAG debug | Trace |
             |---|---|---|---|
-            | `ditdah-e1-${{ github.ref_name }}.tar.gz` | Standard | Disabled | Disabled |
-            | `ditdah-e1-${{ github.ref_name }}-jtag.tar.gz` | JTAG Debug | Enabled | Disabled |
-            | `ditdah-e1-${{ github.ref_name }}-fpga.tar.gz` | Standard plus Anlogic EG4 distributed-RAM register file | Disabled | Disabled |
-            | `ditdah-e1-${{ github.ref_name }}-mul-prefetch.tar.gz` | Zba, hardware multiply (Zmmul) and instruction prefetch in a 64 KiB window. Compressed instructions disabled. | Disabled | Disabled |
+            | `ditdah-e1-${{ github.ref_name }}.tar.gz` | Default RV32E core | Disabled | Disabled |
+            | `ditdah-e1-${{ github.ref_name }}-minimal.tar.gz` | Minimal RV32E with Zicsr. Optional ISA extensions and instruction prefetch disabled. | Disabled | Disabled |
+            | `ditdah-e1-${{ github.ref_name }}-jtag.tar.gz` | Default core with JTAG debug | Enabled | Disabled |
+            | `ditdah-e1-${{ github.ref_name }}-fpga.tar.gz` | Default core with Anlogic EG4 distributed-RAM register file | Disabled | Disabled |
 
-            The standard, JTAG and EG4 profiles enable compressed instructions (Zca). The [7 nm layout](https://github.com/vowstar/ditdah-e1/issues/2#issuecomment-6982396350) uses the multiply and prefetch profile. Its four-bit iterative multiplier includes a fast path for small operands and operand isolation.
+            Default, JTAG and EG4 enable compressed instructions (Zca), Zba, Zmmul and instruction prefetch. Map the aligned 64 KiB reset window to side-effect-free executable memory. All four profiles use the ilp32e ABI and retain machine-mode traps and interrupts.
 
             Zifencei is also available as a generator option in this release.
 
@@ -124,7 +124,7 @@ jobs:
             "result/release/ditdah-e1-${RELEASE_TAG}.tar.gz" \
             "result/release/ditdah-e1-${RELEASE_TAG}-jtag.tar.gz" \
             "result/release/ditdah-e1-${RELEASE_TAG}-fpga.tar.gz" \
-            "result/release/ditdah-e1-${RELEASE_TAG}-mul-prefetch.tar.gz" \
+            "result/release/ditdah-e1-${RELEASE_TAG}-minimal.tar.gz" \
             result/release/SHA256SUMS \
             --draft \
             --verify-tag \

@@ -85,9 +85,9 @@ The stage performs:
 - Register writeback.
 - Trap detection.
 
-By default each fetch waits for the previous transaction. `--prefetch-window-bits N`
+With prefetch disabled each fetch waits for the previous transaction. `--prefetch-window-bits N`
 allows sequential reads in the aligned 2^N-byte region containing the reset
-vector. This region must hold side-effect-free executable memory. The core
+vector. The default window is 64 KiB. This region must hold side-effect-free executable memory. The core
 can have two AXI reads outstanding and expects responses in order. With C it
 can reuse the upper halfword of a fetched word. Stores invalidate matching
 instruction data. With Zifencei enabled, FENCE.I discards buffered instruction data.

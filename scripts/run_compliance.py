@@ -45,9 +45,11 @@ def parse_results_xml(path: Path):
     root = ET.parse(path).getroot()
     for case in root.iter("testcase"):
         name = case.get("name", "")
-        if not name.startswith("compliance_"):
+        if not name.startswith("compliance_") or case.find("skipped") is not None:
             continue
         failure = case.find("failure")
+        if failure is None:
+            failure = case.find("error")
         outcomes[name] = {
             "status": "fail" if failure is not None else "pass",
             "duration_s": float(case.get("time", "0") or 0.0),
@@ -59,6 +61,7 @@ def parse_results_xml(path: Path):
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out-dir", default="result/compliance")
+    parser.add_argument("--rtl-dir", type=Path, help="Directory containing the trace-enabled RTL.")
     parser.add_argument(
         "--skip-build",
         action="store_true",
@@ -85,7 +88,7 @@ def main() -> int:
             "name": "build",
             "status": "pass" if build_result.returncode == 0 else "fail",
             "returncode": build_result.returncode,
-            "log": str(build_log.relative_to(REPO_ROOT)),
+            "log": os.path.relpath(build_log, REPO_ROOT),
         })
         if build_result.returncode != 0:
             report = {"status": "fail", "steps": steps, "tests": []}
@@ -115,8 +118,8 @@ def main() -> int:
         "name": "sail_reference",
         "status": "pass" if sail_result.returncode == 0 and sail_report and sail_report.get("status") == "pass" else "fail",
         "returncode": sail_result.returncode,
-        "log": str(sail_log.relative_to(REPO_ROOT)),
-        "sail_report": str(sail_report_path.relative_to(REPO_ROOT)) if sail_report_path.is_file() else None,
+        "log": os.path.relpath(sail_log, REPO_ROOT),
+        "sail_report": os.path.relpath(sail_report_path, REPO_ROOT) if sail_report_path.is_file() else None,
     })
 
     # Materialise the runtime reference consumed by the cocotb tests so the
@@ -163,33 +166,25 @@ def main() -> int:
         "matches": cross_check,
     })
 
-    # Run only the compliance_* cocotb tests. cocotb's COCOTB_TESTCASE_FILTER
-    # accepts a regex pattern.
-    env = os.environ.copy()
-    env["COCOTB_TESTCASE_FILTER"] = "compliance_.*"
-    env["COCOTB_RESULTS_FILE"] = "results_compliance.xml"
-
+    make_args = ["make", "COCOTB_TEST_FILTER=compliance_.*", f"DITDAH_E1_COMPLIANCE_REFERENCE={reference_path}"]
+    if args.rtl_dir:
+        rtl_dir = args.rtl_dir.resolve()
+        make_args.extend([f"VERILOG_DIR={rtl_dir}", f"SIM_BUILD={rtl_dir / 'sim_build'}"])
+    results_xml = out_dir / "results_compliance.xml"
+    results_xml.unlink(missing_ok=True)
     cocotb_log = logs_dir / "cocotb.log"
     cocotb_result = run(
-        ["make"],
+        [*make_args, f"COCOTB_RESULTS_FILE={results_xml}"],
         cwd=COCOTB_TEST_DIR,
         log=cocotb_log,
     )
-    # cocotb's TESTCASE filter via env var:
-    # Some Makefile.inc variants honour TESTCASE rather than the filter env.
-    # If the run above ran all tests, force a second filtered run using the
-    # standard cocotb TESTCASE filter.
-    results_xml = COCOTB_TEST_DIR / "results_compliance.xml"
-    if not results_xml.is_file():
-        results_xml = COCOTB_TEST_DIR / "results.xml"
-
     outcomes = parse_results_xml(results_xml)
     steps.append({
         "name": "cocotb_compliance_run",
         "status": "pass" if cocotb_result.returncode == 0 else "fail",
         "returncode": cocotb_result.returncode,
-        "log": str(cocotb_log.relative_to(REPO_ROOT)),
-        "results_xml": str(results_xml.relative_to(REPO_ROOT)) if results_xml.is_file() else None,
+        "log": os.path.relpath(cocotb_log, REPO_ROOT),
+        "results_xml": os.path.relpath(results_xml, REPO_ROOT) if results_xml.is_file() else None,
     })
 
     test_records = []
@@ -281,7 +276,7 @@ def main() -> int:
         lines.append(f"| {record['name']} | {record['status']} | {record.get('description', '')} |")
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    print(f"compliance {report['status']}: {json_path.relative_to(REPO_ROOT)}")
+    print(f"compliance {report['status']}: {os.path.relpath(json_path, REPO_ROOT)}")
     return 0 if overall_pass else 1
 
 

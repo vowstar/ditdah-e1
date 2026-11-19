@@ -99,21 +99,31 @@ module ditdah_e1_bench_tb;
   int unsigned rstate = R_IDLE;
   int unsigned rcnt = 0;
   logic [31:0] raddr_q = 0;
+  logic queued_read = 0;
+  logic [31:0] queued_addr;
 
   assign axi_ar_ready = !reset && (rstate == R_IDLE ||
-      (pipelined_reads && rstate == R_RESP && axi_r_ready));
+      (pipelined_reads && rstate == R_RESP && !queued_read));
+  wire accept_read = axi_ar_valid && axi_ar_ready;
+  wire consume_read = axi_r_valid && axi_r_ready;
+  wire [31:0] next_read_addr = queued_read ? queued_addr : axi_ar_bits_addr;
 
   always @(posedge clock) begin
     if (reset) begin
       rstate <= R_IDLE;
+      queued_read <= 0;
       axi_r_valid <= 0;
       axi_r_bits_data <= 0;
       axi_r_bits_resp <= 0;
-    end else if (axi_ar_valid && axi_ar_ready) begin
-      raddr_q <= axi_ar_bits_addr;
+    end else if (accept_read && rstate == R_RESP && !consume_read) begin
+      queued_read <= 1;
+      queued_addr <= axi_ar_bits_addr;
+    end else if (accept_read || (consume_read && queued_read)) begin
+      queued_read <= 0;
+      raddr_q <= next_read_addr;
       rcnt <= read_latency;
       if (read_latency == 0) begin
-        axi_r_bits_data <= mem[axi_ar_bits_addr[17:2]];
+        axi_r_bits_data <= mem[next_read_addr[17:2]];
         axi_r_valid <= 1;
         rstate <= R_RESP;
       end else begin
@@ -126,7 +136,7 @@ module ditdah_e1_bench_tb;
         axi_r_valid <= 1;
         rstate <= R_RESP;
       end else rcnt <= rcnt - 1;
-    end else if (axi_r_valid && axi_r_ready) begin
+    end else if (consume_read) begin
       axi_r_valid <= 0;
       rstate <= R_IDLE;
     end

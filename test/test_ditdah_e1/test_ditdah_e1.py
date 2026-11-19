@@ -2558,7 +2558,9 @@ async def rv32e_misaligned_store_traps_without_data_axi(dut):
 
 COMPLIANCE_BUILD_DIR = REPO_ROOT / "result" / "compliance" / "build"
 COMPLIANCE_MANIFEST = REPO_ROOT / "test" / "compliance" / "manifest.json"
-COMPLIANCE_REFERENCE = REPO_ROOT / "result" / "compliance" / "reference.json"
+COMPLIANCE_REFERENCE = Path(os.environ.get(
+    "DITDAH_E1_COMPLIANCE_REFERENCE", REPO_ROOT / "result" / "compliance" / "reference.json"
+))
 COMPLIANCE_TOHOST_ADDR = 0x100
 COMPLIANCE_SIG_BASE = 0x200
 

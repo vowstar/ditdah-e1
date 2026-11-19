@@ -24,6 +24,15 @@ def write_variant(root, name, enable_jtag, trace=False, leaked_path=False):
     config = {
         "enableJtag": enable_jtag,
         "enableTrace": trace,
+        "enableSva": False,
+        "enableC": name != "minimal",
+        "enableZba": name != "minimal",
+        "enableZmmul": name != "minimal",
+        "enableZifencei": False,
+        "fastSmallMultiply": name != "minimal",
+        "isolateMultiplyOperands": name != "minimal",
+        "multiplyBitsPerCycle": 1 if name == "minimal" else 4,
+        "prefetchWindowBits": 0 if name == "minimal" else 16,
         "jtagIdcode": 1,
         "resetVector": 0,
     }
@@ -48,7 +57,7 @@ def release_fixture(tmp_path):
     input_dir = tmp_path / "inputs"
     write_variant(input_dir, "standard", False)
     write_variant(input_dir, "jtag", True)
-    write_variant(input_dir, "mul-prefetch", False)
+    write_variant(input_dir, "minimal", False)
     license_path = tmp_path / "LICENSE"
     license_path.write_text("MIT License\n", encoding="utf-8")
     return input_dir, license_path
@@ -73,7 +82,7 @@ def test_package_release_builds_four_named_archives(tmp_path):
         "ditdah-e1-v1.2.3.tar.gz",
         "ditdah-e1-v1.2.3-jtag.tar.gz",
         "ditdah-e1-v1.2.3-fpga.tar.gz",
-        "ditdah-e1-v1.2.3-mul-prefetch.tar.gz",
+        "ditdah-e1-v1.2.3-minimal.tar.gz",
     ]
     checksum_names = [
         line.split()[1]
@@ -83,7 +92,7 @@ def test_package_release_builds_four_named_archives(tmp_path):
         "ditdah-e1-v1.2.3.tar.gz",
         "ditdah-e1-v1.2.3-jtag.tar.gz",
         "ditdah-e1-v1.2.3-fpga.tar.gz",
-        "ditdah-e1-v1.2.3-mul-prefetch.tar.gz",
+        "ditdah-e1-v1.2.3-minimal.tar.gz",
     ]
 
     with tarfile.open(archives[0], "r:gz") as archive:
@@ -221,3 +230,18 @@ def test_failed_repackage_preserves_previous_assets(tmp_path):
             input_dir, output_dir, license_path, TAG, COMMIT, EPOCH
         )
     assert {path.name: path.read_bytes() for path in output_dir.iterdir()} == previous
+
+
+@pytest.mark.parametrize("name,key,value", [
+    ("standard", "enableC", False),
+    ("minimal", "prefetchWindowBits", 16),
+    ("jtag", "enableZmmul", False),
+])
+def test_wrong_profile_rejected(tmp_path, name, key, value):
+    inputs, license_path = release_fixture(tmp_path)
+    path = inputs / name / "ditdah_e1_config.json"
+    config = json.loads(path.read_text())
+    config[key] = value
+    path.write_text(json.dumps(config))
+    with pytest.raises(package_release.ReleaseError, match=key):
+        package_release.package_release(inputs, tmp_path / "out", license_path, TAG, COMMIT, EPOCH)

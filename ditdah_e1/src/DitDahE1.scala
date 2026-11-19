@@ -396,7 +396,7 @@ object DitDahE1Module
       fetchArValid := !reused & fetchRequest & !fetchOutstanding & !offer & !held & !(pending & hit)
       fetchResponseFire := (fetchAcceptsResponse & axiR.valid) | served | reused
       fetchResponseError := (fetchAcceptsResponse & axiR.valid & (axiR.bits.resp =/= 0.U(2))) | (served & fault)
-      when(held) { instrRdata := data }
+      when(held & hit) { instrRdata := data }
       when(held & !hit & fetchRequest & !reused) { held := false.B }
       when(reused) { instrRdata := upper ## 0.B(16) }
       when(fetchArFire) {

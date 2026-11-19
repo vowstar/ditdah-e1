@@ -1,42 +1,48 @@
 # DitDah-E1
 
-DitDah-E1 (formerly DitDah32) is a two-stage, single-issue RV32E core for always-on controllers and PHY control. It has 16 integer registers and one AXI4-Lite master port for instructions and data.
+DitDah-E1 (formerly DitDah32) is a two-stage, single-issue RV32E processor for always-on controllers and PHY control. It has 16 integer registers and one AXI4-Lite port for instructions and data.
 
-The core supports Zicsr, direct machine-mode traps, software, timer and external interrupts, MRET and WFI. Compressed instructions (Zca) default on. Zba, Zmmul, Zifencei, instruction prefetch and single-hart JTAG debug default off. [Instruction set](doc/instruction_table.md)
+<p align="center">
+  <a href="https://github.com/vowstar/ditdah-e1/issues/2#issuecomment-7005801650"><img src="https://github.com/user-attachments/assets/ff52a852-069f-4903-88a7-fbb0891d8a67" alt="Filled 7 nm layout of the default DitDah-E1 core" width="640"></a>
+</p>
 
-The diagram shows the default configuration with compressed instructions. [Microarchitecture](doc/microarchitecture.md)
+| Default core on 7 nm | Result |
+| --- | ---: |
+| Routed standard-cell area | 1,043.962 µm² |
+| Shortest passing clock period at 0.75 V, 25 °C (typical) | 1.450 ns |
+| Core power at 500 MHz, excluding external memory | 569.5 µW |
+| One validated CoreMark iteration, zero memory wait states | 727,703 cycles |
 
-[![Default RV32E datapath with Zca enabled, showing fetch and load/store sharing one AXI4-Lite port](doc/ditdah_e1_microarchitecture.drawio.svg)](doc/microarchitecture.md)
+Timing uses parasitics extracted after metal fill. The power estimate uses switching activity from the validated CoreMark iteration in gate-level simulation. [Layout and measurements](https://github.com/vowstar/ditdah-e1/issues/2#issuecomment-7005801650) · [Earlier layout with C disabled](https://github.com/vowstar/ditdah-e1/issues/2#issuecomment-6982396350)
+
+## Microarchitecture
+
+[![Default core showing instruction prefetch, compressed decode, integer multiply and the shared AXI4-Lite port](doc/ditdah_e1_microarchitecture.drawio.svg)](doc/microarchitecture.md)
+
+| Build profile | Instruction set | Instruction fetch |
+| --- | --- | --- |
+| Default | RV32E, Zicsr, compressed instructions (Zca), Zba, Zmmul | Sequential word prefetch in the aligned 64 KiB window containing the reset vector |
+| Minimal | RV32E, Zicsr | Demand reads only |
+
+Both profiles use the `ilp32e` ABI and support machine-mode traps, software, timer and external interrupts, MRET and WFI. Map the default prefetch window to executable memory with side-effect-free reads. [Instruction set](doc/instruction_table.md) · [Microarchitecture](doc/microarchitecture.md)
 
 ## Build and verify
 
 ```sh
 nix develop
 OUTPUT_DIR=result/production build-ditdah-e1
-make verify-smoke      # Build RTL and run unit tests
-make verify-signoff    # Run the full verification campaign
+OUTPUT_DIR=result/minimal build-ditdah-e1 --minimal
+make verify-smoke
+make verify-signoff
 ```
 
-Use `--no-c` to disable compressed instructions or `--jtag` to enable the RISC-V Debug 1.0 subset. For hardware integration, secure the debug port and supply a device ID with `--jtag-idcode ID`. Run `build-ditdah-e1 --help` for all options. [Verification](doc/verification.md) · [Verification limits](doc/open_gaps.md)
+`--no-c` disables only compressed instructions. Use `--minimal --c` for compressed instructions on the minimal core. Enable `FENCE.I` with `--zifencei`. Use `--jtag` for the single-hart RISC-V Debug 1.0 subset. Secure the debug port and set a device ID with `--jtag-idcode ID`. [Verification](doc/verification.md) · [Debug support and limits](doc/open_gaps.md)
 
 ## RTL releases
 
-Download trace-free SystemVerilog for the standard core, the JTAG variant, Anlogic EG4 or `mul-prefetch` for hardware multiply and instruction prefetch with compressed instructions disabled. Each archive includes `filelist.f`. [Release downloads](https://github.com/vowstar/ditdah-e1/releases)
+Version tags built from this revision produce four trace-free SystemVerilog archives. The unsuffixed archive contains the default core. Choose `-minimal` for the smallest feature set, `-jtag` for the default core with debug, or `-fpga` for the default core with an Anlogic EG4 register file. Each archive includes `filelist.f`. In v1.6.0 the standard core enables C only among these options, and the separate `-mul-prefetch` archive disables C. [v1.6.0 downloads](https://github.com/vowstar/ditdah-e1/releases/tag/v1.6.0)
 
-For the EG4 build with JTAG disabled, replace `DitDahE1Gpr.sv` in the filelist with `fpga/DitDahE1Gpr.v` and supply the `EG_LOGIC_DRAM` primitive.
-
-## 7 nm layout
-
-The pictured RV32E core uses Zba, Zmmul and a 64 KiB instruction-prefetch window with C and JTAG disabled.
-
-| Measurement on the filled layout | Result |
-| --- | ---: |
-| Standard-cell area | 869.638 µm² |
-| Shortest passing period at 0.75 V, 25 °C (typical) | 1.425 ns |
-| Estimated core power at 500 MHz from CoreMark switching activity, excluding memory | 367.7 µW |
-| One validated CoreMark iteration in gate simulation with zero memory wait states | 665,163 cycles |
-
-[![Filled 7 nm DitDah-E1 core layout](https://github.com/user-attachments/assets/98bf037e-0950-44de-aae4-5fcff4102fd4)](https://github.com/vowstar/ditdah-e1/issues/2#issuecomment-6982396350)
+For EG4, replace `DitDahE1Gpr.sv` in the filelist with `fpga/DitDahE1Gpr.v` and supply the `EG_LOGIC_DRAM` primitive.
 
 ## License
 

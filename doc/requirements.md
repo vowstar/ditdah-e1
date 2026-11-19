@@ -6,7 +6,7 @@ DitDahE1 is a two-stage RV32E core for low-resource embedded systems.
 
 ## Architectural Scope
 
-- RV32E is the base ISA. Compressed instructions default on. Zba, Zmmul and Zifencei default off.
+- RV32E is the base ISA. The default enables compressed instructions, Zba and Zmmul. The minimal profile disables all three. Zifencei is opt-in.
 - The control profile implements `Zicsr` and a minimal machine-mode privileged
   subset for direct trap entry, `MRET`, WFI, and machine software, timer, and
   external interrupts.
@@ -37,7 +37,7 @@ The first implementation target is a single-beat AXI4-Lite compatible subset:
 
 - one shared read/write AXI master port;
 - 32-bit address and data width;
-- at most one outstanding read;
+- up to two ordered reads with prefetch, one with prefetch disabled;
 - at most one outstanding write;
 - no bursts, IDs, locks, cache attributes, QoS, or out-of-order responses.
 

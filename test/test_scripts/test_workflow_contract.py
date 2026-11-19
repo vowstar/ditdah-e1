@@ -62,7 +62,7 @@ def test_release_workflow_packages_and_publishes_rtl_variants():
     assert "--verify" in build_run
     assert "ditdah-e1-${RELEASE_TAG}.tar.gz" in publish_run
     assert "ditdah-e1-${RELEASE_TAG}-jtag.tar.gz" in publish_run
-    assert "ditdah-e1-${RELEASE_TAG}-mul-prefetch.tar.gz" in publish_run
+    assert "ditdah-e1-${RELEASE_TAG}-minimal.tar.gz" in publish_run
     assert "gh release create" in publish_run
     assert "--draft" in publish_run
     assert "--verify-tag" in publish_run

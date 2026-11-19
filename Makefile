@@ -62,6 +62,10 @@ build:
 build-trace:
 	build-ditdah-e1 --trace
 
+.PHONY: build-rv32ec-trace
+build-rv32ec-trace:
+	build-ditdah-e1 --minimal --c --trace
+
 build-jtag:
 	OUTPUT_DIR=result/jtag build-ditdah-e1 --no-trace --jtag
 
@@ -78,7 +82,7 @@ bench:
 	python3 scripts/build_benchmarks.py --out-dir result/bench
 
 bench-score: build
-	python3 scripts/run_bench_sim.py \
+	python3 scripts/run_bench_sim.py --isa rv32ec_zba_zmmul --pipelined-reads \
 		--coremark-iterations $(BENCH_COREMARK_ITERATIONS) \
 		--dhrystone-runs $(BENCH_DHRYSTONE_RUNS) \
 		--frequency-mhz $(BENCH_FREQ_MHZ)
@@ -86,7 +90,7 @@ bench-score: build
 coverage:
 	python3 scripts/rv32ec_coverage.py --out-dir result/coverage
 
-formal: build-trace
+formal: build-rv32ec-trace
 	python3 scripts/run_formal.py --depth 24
 
 formal-jtag: build-jtag
@@ -95,26 +99,27 @@ formal-jtag: build-jtag
 # Its own output tree: the SVA firtool emits is not parseable by read_slang,
 # so it must never land in result/ where the SymbiYosys flows look.
 build-sva:
-	OUTPUT_DIR=$(CURDIR)/result/sva build-ditdah-e1 --trace --sva
+	OUTPUT_DIR=$(CURDIR)/result/sva build-ditdah-e1 --minimal --c --trace --sva
 
 # Unbounded proof on a licensed engine. Kept out of verify-signoff because CI
 # has no license. Skips clean when no engine is reachable.
 verify-commercial: build-sva
 	python3 scripts/run_commercial_formal.py --out-dir result/formal/commercial $(COMMERCIAL_FORMAL_ARGS)
 
-verify-rvfi-lite: build-trace
+verify-rvfi-lite: build-rv32ec-trace
 	python3 scripts/run_rvfi_lite.py --depth 24
 
-verify-rvfi: build-trace
+verify-rvfi: build-rv32ec-trace
 	python3 scripts/run_rvfi.py --depth 24
 
-verify-riscv-dv: build-trace
+verify-riscv-dv: build-rv32ec-trace
 	python3 scripts/run_riscv_dv.py --config test/riscv_dv/ditdah_e1_rv32ec.yaml
 
-verify-compliance: build-trace
-	python3 scripts/run_compliance.py
+verify-compliance:
+	OUTPUT_DIR=result/compliance/rtl build-ditdah-e1 --trace
+	python3 scripts/run_compliance.py --rtl-dir result/compliance/rtl
 
-signoff-coverage: build-trace
+signoff-coverage: build-rv32ec-trace
 	python3 scripts/run_signoff_coverage.py
 
 test-model:
@@ -136,27 +141,34 @@ test-jtag-prefetch:
 		VERILOG_DIR=$(abspath result/$@) SIM_BUILD=$(abspath result/$@/sim_build) \
 		COCOTB_RESULTS_FILE=$(abspath result/$@/results.xml)
 
-.PHONY: test-rv32e test-zifencei test-zmmul test-prefetch
+.PHONY: test-default test-rv32e test-zifencei test-zmmul test-prefetch
+test-default:
+	OUTPUT_DIR=result/$@ build-ditdah-e1 --trace
+	$(MAKE) -C test/test_ditdah_e1 MODULE=test_default,test_zmmul \
+		VERILOG_DIR=$(abspath result/$@) SIM_BUILD=$(abspath result/$@/sim_build) \
+		COCOTB_RESULTS_FILE=$(abspath result/$@/results.xml)
+
 test-prefetch: ISA_OPTIONS = --zba --prefetch-window-bits 6 --zmmul --fast-small-multiply --isolate-multiply-operands --zifencei
 test-prefetch: ISA_TEST = test_prefetch,test_zmmul,test_rv32e
 test-prefetch: export TEST_ZIFENCEI = 1
 MULTIPLY_BITS ?= 1
 test-zmmul: ISA_OPTIONS = --zmmul --multiply-bits $(MULTIPLY_BITS)
 test-zmmul: ISA_TEST = test_zmmul
+test-rv32e: export TEST_MINIMAL = 1
 test-rv32e test-zifencei: ISA_TEST = test_rv32e
 test-zifencei: ISA_OPTIONS = --zifencei
 test-zifencei: export TEST_ZIFENCEI = 1
 test-rv32e test-zifencei test-zmmul test-prefetch:
-	OUTPUT_DIR=result/$@ build-ditdah-e1 --no-c --trace $(ISA_OPTIONS)
+	OUTPUT_DIR=result/$@ build-ditdah-e1 --minimal --trace $(ISA_OPTIONS)
 	$(MAKE) -C test/test_ditdah_e1 MODULE=$(ISA_TEST) \
 		VERILOG_DIR=$(abspath result/$@) SIM_BUILD=$(abspath result/$@/sim_build) \
 		COCOTB_RESULTS_FILE=$(abspath result/$@/results.xml)
 
-test-isa-rtl: test-isa build-trace
+test-isa-rtl: test-isa build-rv32ec-trace
 	python3 scripts/rv32ec_isa_regress.py --out-dir result/isa
 	python3 scripts/run_rtl_isa_matrix.py --isa-dir result/isa --out-dir result/rtl_trace/isa_artifacts
 
-test: test-model test-isa test-scripts bench build-trace
+test: test-model test-isa test-scripts bench build-rv32ec-trace
 	$(MAKE) -C test/test_ditdah_e1
 
 verify:
@@ -168,7 +180,7 @@ verify-ci-smoke:
 verify-signoff:
 	python3 scripts/run_verification_campaign.py --profile signoff
 
-verify-iss: test-isa build-trace
+verify-iss: test-isa build-rv32ec-trace
 	python3 scripts/rv32ec_isa_regress.py --out-dir result/isa
 	python3 scripts/run_rtl_isa_matrix.py --isa-dir result/isa --out-dir result/rtl_trace/isa_artifacts
 	python3 scripts/run_sail_iss_smoke.py --isa-dir result/isa --out-dir result/iss/sail_matrix --all-compatible --ram-base 0x0 --memory-size 0x80100000 --clint-base 0xa0000000 --allow-low-data-memory
@@ -187,7 +199,7 @@ verify-spike-smoke: test-isa
 verify-spike-matrix: test-isa
 	python3 scripts/run_spike_iss_smoke.py --isa-dir result/isa --out-dir result/iss/spike_matrix --all-compatible
 
-verify-spike-highmem: test-isa build-trace
+verify-spike-highmem: test-isa build-rv32ec-trace
 	python3 scripts/rv32ec_isa_regress.py --out-dir result/iss/spike_artifacts --spike-compatible
 	python3 scripts/run_rtl_isa_matrix.py --isa-dir result/iss/spike_artifacts --out-dir result/rtl_trace/spike_highmem_artifacts
 	python3 scripts/run_spike_iss_smoke.py --isa-dir result/iss/spike_artifacts --out-dir result/iss/spike_highmem --all-compatible
@@ -201,7 +213,7 @@ verify-sail-smoke: test-isa
 verify-sail-matrix: test-isa
 	python3 scripts/run_sail_iss_smoke.py --isa-dir result/isa --out-dir result/iss/sail_matrix --all-compatible --ram-base 0x0 --memory-size 0x80100000 --clint-base 0xa0000000 --allow-low-data-memory
 
-verify-sail-highmem: test-isa build-trace
+verify-sail-highmem: test-isa build-rv32ec-trace
 	python3 scripts/rv32ec_isa_regress.py --out-dir result/iss/sail_artifacts --spike-compatible
 	python3 scripts/run_rtl_isa_matrix.py --isa-dir result/iss/sail_artifacts --out-dir result/rtl_trace/sail_highmem_artifacts
 	python3 scripts/run_sail_iss_smoke.py --isa-dir result/iss/sail_artifacts --out-dir result/iss/sail_highmem --all-compatible

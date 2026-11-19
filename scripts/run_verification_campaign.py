@@ -49,8 +49,8 @@ SMOKE_STEPS = [
     ),
     Step(
         "rtl_build",
-        ["build-ditdah-e1", "--trace"],
-        "Generate trace-enabled DitDahE1 Verilog from Zaozi source for RTL verification.",
+        ["make", "build-rv32ec-trace"],
+        "Build the C-only trace profile for the RV32EC ISS and single-read formal harnesses.",
     ),
 ]
 
@@ -108,8 +108,8 @@ RTL_MATRIX_STEPS = [
 FULL_STEPS = [
     Step(
         "compliance_signatures",
-        ["python3", "scripts/run_compliance.py"],
-        "Build the signature-test firmware and check it against Sail.",
+        ["make", "verify-compliance"],
+        "Run the shipping default against the Sail reference signatures.",
     ),
     Step(
         "rtl_cocotb_full",
@@ -119,6 +119,8 @@ FULL_STEPS = [
 ]
 
 SIGNOFF_STEPS = [
+    Step("default_profile", ["make", "test-default"], "Check compressed execution, multiply and prefetch on the shipping default."),
+    Step("minimal_profile", ["make", "test-rv32e"], "Check the shipping minimal profile and illegal encodings."),
     Step(
         "optional_fetch_and_arithmetic",
         ["make", "test-prefetch"],

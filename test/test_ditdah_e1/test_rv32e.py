@@ -8,7 +8,7 @@ from cocotb.triggers import with_timeout
 
 from test_ditdah_e1 import (
     CSR_MEPC, CSR_MISA, assert_trace, axi_backpressure_generators, b_type,
-    collect_trace, csrrs, csrrw, i_type, j_type, pack_words, s_type,
+    collect_trace, csrrs, csrrw, i_type, j_type, pack_words, r_type, s_type,
     start_core, u_type,
 )
 
@@ -64,3 +64,10 @@ async def instruction_fetch_after_store(dut, fence):
     assert_trace(events[3], 12, fence, trap=not enabled, cause=0 if enabled else 1)
     if enabled:
         assert_trace(events[4], 16, patched, rd=3, rd_wdata=7)
+
+@cocotb.test(skip=os.environ.get("TEST_MINIMAL") != "1")
+@cocotb.parametrize(insn=[r_type(1, 0, 0, 0, 1), r_type(0x10, 0, 0, 2, 1)])
+async def minimal_arithmetic_extensions_trap(dut, insn):
+    await start_core(dut, pack_words([insn]))
+    event, = await with_timeout(collect_trace(dut, 1), 10, "us")
+    assert_trace(event, 0, insn, trap=True, cause=1, next_pc=0)
