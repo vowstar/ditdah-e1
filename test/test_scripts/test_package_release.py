@@ -48,7 +48,7 @@ def release_fixture(tmp_path):
     input_dir = tmp_path / "inputs"
     write_variant(input_dir, "standard", False)
     write_variant(input_dir, "jtag", True)
-    write_variant(input_dir, "rv32e-7nm", False)
+    write_variant(input_dir, "mul-prefetch", False)
     license_path = tmp_path / "LICENSE"
     license_path.write_text("MIT License\n", encoding="utf-8")
     return input_dir, license_path
@@ -73,7 +73,7 @@ def test_package_release_builds_four_named_archives(tmp_path):
         "ditdah-e1-v1.2.3.tar.gz",
         "ditdah-e1-v1.2.3-jtag.tar.gz",
         "ditdah-e1-v1.2.3-fpga.tar.gz",
-        "ditdah-e1-v1.2.3-rv32e-7nm.tar.gz",
+        "ditdah-e1-v1.2.3-mul-prefetch.tar.gz",
     ]
     checksum_names = [
         line.split()[1]
@@ -83,7 +83,7 @@ def test_package_release_builds_four_named_archives(tmp_path):
         "ditdah-e1-v1.2.3.tar.gz",
         "ditdah-e1-v1.2.3-jtag.tar.gz",
         "ditdah-e1-v1.2.3-fpga.tar.gz",
-        "ditdah-e1-v1.2.3-rv32e-7nm.tar.gz",
+        "ditdah-e1-v1.2.3-mul-prefetch.tar.gz",
     ]
 
     with tarfile.open(archives[0], "r:gz") as archive:

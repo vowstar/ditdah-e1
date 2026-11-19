@@ -21,7 +21,7 @@ Use `--no-c` to disable compressed instructions or `--jtag` to enable the RISC-V
 
 ## RTL releases
 
-Download trace-free SystemVerilog for the standard core, the JTAG variant, Anlogic EG4 or the RV32E configuration used for the 7 nm layout. Each archive includes `filelist.f`. [Release downloads](https://github.com/vowstar/ditdah-e1/releases)
+Download trace-free SystemVerilog for the standard core, the JTAG variant, Anlogic EG4 or `mul-prefetch` for hardware multiply and instruction prefetch with compressed instructions disabled. Each archive includes `filelist.f`. [Release downloads](https://github.com/vowstar/ditdah-e1/releases)
 
 For the EG4 build with JTAG disabled, replace `DitDahE1Gpr.sv` in the filelist with `fpga/DitDahE1Gpr.v` and supply the `EG_LOGIC_DRAM` primitive.
 

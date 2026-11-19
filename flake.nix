@@ -637,8 +637,8 @@ EOF
           name = "jtag";
           config.enableJtag = true;
         };
-        rtlLayout = mkRtlPackage {
-          name = "rv32e-7nm";
+        rtlMulPrefetch = mkRtlPackage {
+          name = "mul-prefetch";
           config = {
             enableC = false;
             enableZba = true;
@@ -652,7 +652,7 @@ EOF
         releaseInputs = pkgs.linkFarm "ditdah-e1-release-inputs" [
           { name = "standard"; path = rtlStandard; }
           { name = "jtag"; path = rtlJtag; }
-          { name = "rv32e-7nm"; path = rtlLayout; }
+          { name = "mul-prefetch"; path = rtlMulPrefetch; }
         ];
       in
       {

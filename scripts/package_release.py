@@ -59,7 +59,7 @@ VARIANTS = (
         ("DitDahE1.sv",),
         ("fpga/DitDahE1Gpr.v", "fpga/ditdah_e1.sdc"),
     ),
-    Variant("rv32e-7nm", "rv32e-7nm", "-rv32e-7nm", False, ("DitDahE1.sv",)),
+    Variant("mul-prefetch", "mul-prefetch", "-mul-prefetch", False, ("DitDahE1.sv",)),
 )
 
 
