@@ -89,10 +89,11 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           cd result/release
-          test "$(find . -maxdepth 1 -name '*.tar.gz' -type f | wc -l)" -eq 3
+          test "$(find . -maxdepth 1 -name '*.tar.gz' -type f | wc -l)" -eq 4
           test -f "ditdah-e1-${RELEASE_TAG}.tar.gz"
           test -f "ditdah-e1-${RELEASE_TAG}-jtag.tar.gz"
           test -f "ditdah-e1-${RELEASE_TAG}-fpga.tar.gz"
+          test -f "ditdah-e1-${RELEASE_TAG}-rv32e-7nm.tar.gz"
           sha256sum --check SHA256SUMS
 
       - name: Create Draft Release
@@ -107,6 +108,11 @@ jobs:
             | `ditdah-e1-${{ github.ref_name }}.tar.gz` | Standard | Disabled | Disabled |
             | `ditdah-e1-${{ github.ref_name }}-jtag.tar.gz` | JTAG Debug | Enabled | Disabled |
             | `ditdah-e1-${{ github.ref_name }}-fpga.tar.gz` | Standard plus Anlogic EG4 distributed-RAM register file | Disabled | Disabled |
+            | `ditdah-e1-${{ github.ref_name }}-rv32e-7nm.tar.gz` | RV32E configuration used for the [7 nm layout](https://github.com/vowstar/ditdah-e1/issues/2#issuecomment-6982396350) | Disabled | Disabled |
+
+            The standard, JTAG and EG4 profiles enable Zca. The 7 nm RTL profile enables Zba, four-bit iterative Zmmul with the small-MUL fast path and operand isolation, and a 64 KiB instruction-prefetch window. C and JTAG are disabled in this profile.
+
+            Zifencei is also available as a generator option in this release.
 
             Use `SHA256SUMS` to verify all downloads. The default JTAG IDCODE is an integration placeholder.
         run: |
@@ -118,6 +124,7 @@ jobs:
             "result/release/ditdah-e1-${RELEASE_TAG}.tar.gz" \
             "result/release/ditdah-e1-${RELEASE_TAG}-jtag.tar.gz" \
             "result/release/ditdah-e1-${RELEASE_TAG}-fpga.tar.gz" \
+            "result/release/ditdah-e1-${RELEASE_TAG}-rv32e-7nm.tar.gz" \
             result/release/SHA256SUMS \
             --draft \
             --verify-tag \
@@ -130,7 +137,7 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           asset_count=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets | length')
-          test "$asset_count" -eq 4
+          test "$asset_count" -eq 5
           while read -r digest filename; do
             remote=$(gh release view "$RELEASE_TAG" --json assets \
               --jq ".assets[] | select(.name == \"$filename\") | .digest")

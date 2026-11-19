@@ -565,13 +565,20 @@ EOF
           '';
         };
 
-        mkRtlPackage = { name, enableJtag }:
+        mkRtlPackage = { name, config ? { } }:
           let
             releaseConfig = ditdah_e1Config // {
               enableTrace = false;
               enableSva = false;
-              inherit enableJtag;
-            };
+              enableC = true;
+              enableZba = false;
+              enableZmmul = false;
+              enableZifencei = false;
+              multiplyBitsPerCycle = 1;
+              fastSmallMultiply = false;
+              isolateMultiplyOperands = false;
+              prefetchWindowBits = 0;
+            } // config;
           in
           pkgs.runCommand "ditdah-e1-verilog-${name}" {
             nativeBuildInputs = [
@@ -592,18 +599,8 @@ EOF
 
             rm -f DitDahE1*.mlirbc
 
-            scala-cli run \
-              --power \
-              --offline \
-              ${commonScalaArgs} \
-              --main-class com.vowstar.ditdah.e1.DitDahE1Module \
-              . \
-              -- config "$out/ditdah_e1_config.json" \
-              --resetVector ${toString releaseConfig.resetVector} \
-              --enableTrace false \
-              --enableSva false \
-              --enableJtag ${if enableJtag then "true" else "false"} \
-              --jtagIdcode ${toString releaseConfig.jtagIdcode}
+            printf '%s\n' ${pkgs.lib.escapeShellArg (builtins.toJSON releaseConfig)} \
+              > "$out/ditdah_e1_config.json"
 
             scala-cli run \
               --power \
@@ -631,21 +628,31 @@ EOF
             ${pkgs.gnugrep}/bin/grep -v -e DitDahE1_DV.sv -e layers-DitDahE1-DV.sv \
               "$out"/filelist.f > "$out"/filelist.f.tmp
             mv "$out"/filelist.f.tmp "$out"/filelist.f
-            printf '%s\n' ${pkgs.lib.escapeShellArg (builtins.toJSON releaseConfig)} \
-              > "$out/ditdah_e1_config.json"
           '';
 
         rtlStandard = mkRtlPackage {
           name = "standard";
-          enableJtag = false;
         };
         rtlJtag = mkRtlPackage {
           name = "jtag";
-          enableJtag = true;
+          config.enableJtag = true;
+        };
+        rtlLayout = mkRtlPackage {
+          name = "rv32e-7nm";
+          config = {
+            enableC = false;
+            enableZba = true;
+            enableZmmul = true;
+            multiplyBitsPerCycle = 4;
+            fastSmallMultiply = true;
+            isolateMultiplyOperands = true;
+            prefetchWindowBits = 16;
+          };
         };
         releaseInputs = pkgs.linkFarm "ditdah-e1-release-inputs" [
           { name = "standard"; path = rtlStandard; }
           { name = "jtag"; path = rtlJtag; }
+          { name = "rv32e-7nm"; path = rtlLayout; }
         ];
       in
       {

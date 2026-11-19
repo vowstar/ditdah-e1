@@ -40,7 +40,7 @@ def test_verification_workflow_contains_required_ci_contract():
     assert "result/verification/**" in ci_evidence_artifact_paths
 
 
-def test_release_workflow_packages_and_publishes_two_rtl_variants():
+def test_release_workflow_packages_and_publishes_rtl_variants():
     workflow = yaml.safe_load(
         (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
     )
@@ -62,6 +62,7 @@ def test_release_workflow_packages_and_publishes_two_rtl_variants():
     assert "--verify" in build_run
     assert "ditdah-e1-${RELEASE_TAG}.tar.gz" in publish_run
     assert "ditdah-e1-${RELEASE_TAG}-jtag.tar.gz" in publish_run
+    assert "ditdah-e1-${RELEASE_TAG}-rv32e-7nm.tar.gz" in publish_run
     assert "gh release create" in publish_run
     assert "--draft" in publish_run
     assert "--verify-tag" in publish_run
